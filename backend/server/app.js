@@ -602,6 +602,13 @@ app.get("*all", (req, res) => {
   res.sendFile(path.join(__dirname, "../../frontend/index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+// Export for Vercel serverless — Vercel imports the default export
+export default app;
+
+// Local dev: start the server normally
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
+

@@ -2,6 +2,7 @@
   "name": "loop_opportunities_js",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=20" },
   "scripts": {
     "dev": "node --watch backend/server/app.js",
     "start": "node backend/server/app.js",
@@ -13,12 +14,12 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.3.0"
   },
   "devDependencies": {
-    "dotenv": "^17.4.2",
     "eslint": "^9.32.0",
     "prettier": "^3.7.3"
   }
