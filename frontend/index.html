@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOP — Your Opportunity Feed</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            border: 'var(--border)',
+            lime: 'var(--lime)',
+            amber: 'var(--amber)',
+            indigo: 'var(--indigo)',
+          },
+          fontFamily: {
+            display: ['Anton', 'Impact', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+  <!-- Sticky Ticker Banner -->
+  <div class="sticky top-0 z-50 bg-primary text-primary-foreground py-1.5 overflow-hidden border-b-2 border-foreground">
+    <div id="marquee-ticker" class="marquee-content gap-10 whitespace-nowrap font-mono text-[11px] font-bold uppercase tracking-tight">
+      <span class="inline-flex items-center gap-3">
+        <span>LOOP · Loading opportunities</span>
+        <span class="opacity-50">✦</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-[28px] z-40 bg-background/80 backdrop-blur-md border-b-2 border-foreground/10">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <a href="/" class="font-display text-3xl uppercase tracking-tighter italic leading-none shrink-0">
+        LOOP<span class="text-primary">.</span>
+      </a>
+      <nav id="header-nav" class="flex items-center gap-1">
+        <!-- Log In/Sign Up or Profile Links dynamic -->
+      </nav>
+    </div>
+  </header>
+
+  <!-- Container for Landing Page (rendered when anonymous) -->
+  <div id="landing-container" class="hidden min-h-[80vh] flex flex-col items-center justify-center text-center px-6 animate-entry">
+    <h1 class="font-display text-7xl md:text-9xl uppercase tracking-tighter leading-none italic">
+      LOOP<span class="text-primary">.</span>
+    </h1>
+    <p class="mt-6 font-mono text-sm uppercase tracking-widest text-muted-foreground max-w-2xl">
+      No more missed deadlines. A curated feed of internships, scholarships, and competitions tailored for you.
+    </p>
+    <div class="mt-12 flex items-center justify-center gap-4">
+      <a href="/signup" class="bg-foreground text-background px-8 py-4 rounded-full font-mono text-sm font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+        Get Started
+      </a>
+      <a href="/login" class="border-2 border-foreground px-8 py-4 rounded-full font-mono text-sm font-bold uppercase hover:bg-foreground/5 transition-colors">
+        Log In
+      </a>
+    </div>
+  </div>
+
+  <!-- Container for Feed Page (rendered when authenticated) -->
+  <div id="feed-container" class="hidden"><div class="max-w-6xl mx-auto px-6 py-10 lg:py-14 grid grid-cols-12 gap-8 lg:gap-12">
+    
+    <!-- Left Sidebar: Profile & Filters -->
+    <aside class="col-span-12 lg:col-span-4 flex flex-col gap-7 lg:sticky lg:top-10 lg:self-start lg:max-h-[calc(100vh-80px)] overflow-y-auto no-scrollbar pb-6">
+      
+      <!-- Greeting -->
+      <div class="animate-entry">
+        <h1 class="font-display text-6xl uppercase tracking-tighter leading-[0.85] italic">
+          Hey,<br><span id="user-greeting">Student</span>.
+        </h1>
+        <p id="stats-banner" class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground mt-3">
+          0 opps · 0 saved · 0 ♥
+        </p>
+      </div>
+
+      <!-- Filter Rail -->
+      <div class="p-6 bg-card border-2 border-foreground rounded-3xl shadow-stamp animate-entry [animation-delay:80ms] space-y-4">
+        <div class="font-mono text-[10px] opacity-50 tracking-widest uppercase">FILTERS</div>
+        
+        <!-- Category Buttons -->
+        <div class="flex flex-wrap gap-1.5" id="category-filters">
+          <button data-cat="all" class="cat-btn px-3 py-1.5 border-2 border-foreground bg-foreground text-background rounded-xl font-mono text-[10px] font-bold uppercase transition-all">All</button>
+          <button data-cat="internship" class="cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all">Internship</button>
+          <button data-cat="scholarship" class="cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all">Scholarship</button>
+          <button data-cat="competition" class="cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all">Competition</button>
+          <button data-cat="fellowship" class="cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all">Fellowship</button>
+          <button data-cat="hackathon" class="cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all">Hackathon</button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative">
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="SEARCH KEYWORDS" 
+            class="w-full bg-background border-2 border-foreground pl-10 pr-4 py-3 font-mono text-[10px] uppercase rounded-xl focus:outline-none focus:border-primary"
+          />
+          <i data-lucide="search" class="absolute left-3.5 top-3.5 size-4 text-muted-foreground"></i>
+        </div>
+      </div>
+
+      <!-- Profile Card -->
+      <a href="/profile" class="block animate-entry [animation-delay:160ms] p-6 bg-foreground text-background rounded-3xl hover:-translate-y-1 hover:shadow-stamp-lg transition-all shadow-stamp">
+        <div class="font-mono text-[10px] opacity-50 mb-4 tracking-widest flex items-center justify-between">
+          <span>USER_PROFILE</span>
+          <span class="text-[8px] border border-background/20 px-1.5 py-0.5 rounded">EDIT →</span>
+        </div>
+        <div class="flex items-center gap-3 mb-4">
+          <div id="profile-avatar" class="size-12 rounded-full bg-primary flex items-center justify-center font-display text-xl text-primary-foreground overflow-hidden shrink-0">ST</div>
+          <div class="min-w-0">
+            <div id="profile-name" class="font-bold text-sm truncate">Student</div>
+            <div id="profile-future" class="text-xs opacity-60 line-clamp-2">Dream your future...</div>
+          </div>
+        </div>
+        <div class="space-y-1.5">
+          <div class="font-mono text-[10px] opacity-50 tracking-widest">SKILLS</div>
+          <div id="profile-skills-tags" class="flex flex-wrap gap-1"></div>
+        </div>
+      </a>
+
+    </aside>
+
+    <!-- Center Section: Swipe Cards & Matches Feed -->
+    <section class="col-span-12 lg:col-span-8 flex flex-col gap-8 lg:pl-4">
+      
+      <!-- Swipe Stack Container -->
+      <div id="swipe-stack-section" class="select-none flex flex-col w-full">
+        <!-- Header row of Swipe Stack -->
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              For you · swipe to triage
+            </div>
+            <div class="font-display text-2xl uppercase leading-none mt-1">
+              Swipes <span id="swipe-current-index">1</span> <span class="text-muted-foreground">/ <span id="swipe-queue-total">0</span></span>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="swipe-undo-btn"
+            disabled
+            class="p-2.5 border-2 border-foreground rounded-xl disabled:opacity-30 hover:bg-muted transition-all"
+            aria-label="Undo"
+          >
+            <i data-lucide="rotate-ccw" class="size-4"></i>
+          </button>
+        </div>
+
+        <!-- Stack Container -->
+        <div id="swipe-stack-cards-wrapper" class="relative h-[420px] w-full max-w-lg mx-auto">
+          <!-- Populate stack programmatically -->
+        </div>
+
+        <!-- Controls Row -->
+        <div id="swipe-controls-row" class="flex justify-center items-center gap-4 mt-5">
+          <button
+            type="button"
+            id="swipe-btn-pass"
+            class="size-14 rounded-full bg-card border-2 border-foreground shadow-stamp flex items-center justify-center hover:-translate-y-1 transition-transform"
+            aria-label="Pass"
+          >
+            <i data-lucide="x" class="size-6"></i>
+          </button>
+          <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            ← pass · save →
+          </div>
+          <button
+            type="button"
+            id="swipe-btn-interested"
+            class="size-14 rounded-full bg-primary text-primary-foreground border-2 border-foreground shadow-stamp flex items-center justify-center hover:-translate-y-1 transition-transform"
+            aria-label="Interested"
+          >
+            <i data-lucide="heart" class="size-6 fill-current"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Matches Feed List -->
+      <div>
+        <div class="flex items-end justify-between mb-3">
+          <div>
+            <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">All matches · ranked for you</div>
+            <h2 class="font-display text-3xl uppercase tracking-tight leading-none mt-1">The full feed</h2>
+          </div>
+        </div>
+        <div id="feed-list" class="flex flex-col gap-5">
+          <!-- Populated by JS -->
+        </div>
+        <button id="load-more-btn" class="hidden w-full mt-4 py-4 bg-foreground text-background font-mono text-xs font-bold uppercase rounded-2xl hover:bg-primary transition-colors">
+          Load More
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Right Sidebar Widget: Watchlist -->
+    <aside class="hidden xl:block fixed right-6 bottom-6 w-64 bg-foreground text-background rounded-3xl p-5 shadow-stamp-lg z-30 transition-all">
+      <button id="toggle-watchlist-btn" class="w-full flex items-center justify-between font-mono text-[10px] opacity-70 hover:opacity-100 tracking-widest outline-none">
+        <div class="flex items-center gap-2">
+          <span class="size-1.5 bg-primary rounded-full animate-pulse"></span> WATCHLIST
+        </div>
+        <i data-lucide="chevron-down" id="watchlist-arrow" class="size-3"></i>
+      </button>
+      <ul id="watchlist-list" class="space-y-3 mt-4">
+        <!-- Dynamically rendered -->
+      </ul>
+    </aside>
+
+    <!-- Left Sidebar Widget: Deadline Timer -->
+    <aside id="deadline-timer-widget" class="hidden xl:flex fixed left-6 bottom-6 w-64 flex-col bg-background border-2 border-foreground rounded-3xl p-5 shadow-stamp-lg z-30 transition-all">
+      <button id="toggle-timer-btn" class="w-full flex items-center justify-between font-mono text-[10px] text-foreground/70 hover:text-foreground tracking-widest outline-none">
+        <div class="flex items-center gap-2">
+          <i data-lucide="timer" class="size-3"></i>
+          <span>DEADLINE NUDGE</span>
+        </div>
+        <i data-lucide="chevron-down" id="timer-arrow" class="size-3"></i>
+      </button>
+
+      <div id="timer-body" class="mt-4">
+        <!-- No urgent deadline state -->
+        <div id="timer-empty" class="hidden font-mono text-[10px] uppercase tracking-widest text-foreground/40 text-center py-2">
+          No upcoming deadlines.
+        </div>
+
+        <!-- Active countdown -->
+        <div id="timer-active" class="hidden">
+          <div id="timer-opp-name" class="text-xs font-semibold leading-snug line-clamp-2 mb-3"></div>
+          <div class="flex items-end gap-2">
+            <div class="font-display text-4xl uppercase leading-none tracking-tight" id="timer-display">--:--:--</div>
+            <div class="font-mono text-[9px] uppercase text-foreground/50 mb-1" id="timer-unit">left</div>
+          </div>
+          <div class="mt-2 h-1 rounded-full bg-foreground/10 overflow-hidden">
+            <div id="timer-progress-bar" class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 100%"></div>
+          </div>
+          <div class="mt-3 font-mono text-[9px] uppercase tracking-widest text-foreground/40" id="timer-deadline-label"></div>
+        </div>
+      </div>
+    </aside>
+
+  </div></div>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-foreground/10 mt-24 py-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
+      <div>
+        <div class="font-display text-3xl uppercase tracking-tighter italic">LOOP.</div>
+        <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mt-2">v.03 — built for the curious</p>
+      </div>
+      <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        © 2026 · No more missed deadlines.
+      </div>
+    </div>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Check Authentication State
+      const user = await getAuthUser();
+      if (!user) {
+        document.getElementById("landing-container").classList.remove("hidden");
+        renderHeader(null);
+        initMarqueeTicker();
+        return;
+      }
+
+      document.getElementById("feed-container").classList.remove("hidden");
+      renderHeader(user);
+      initMarqueeTicker();
+
+      // In-memory feed configurations
+      let profileData = null;
+      let feedOpps = [];
+      let currentPage = 1;
+      let activeCategory = "all";
+      let activeQuery = "";
+      let swipeIndex = 0;
+      let swipeHistory = [];
+
+      // Load Profile & Feed data
+      async function initializeFeed() {
+        try {
+          // Fetch Profile details
+          const profileRes = await fetch("/api/user/profile");
+          if (!profileRes.ok) return;
+          profileData = await profileRes.json();
+
+          // Render Profile stats & sidebar details
+          document.getElementById("user-greeting").innerText = (profileData.profile.name || "Student").split(" ")[0];
+          document.getElementById("profile-name").innerText = profileData.profile.name || "Student";
+          document.getElementById("profile-future").innerText = profileData.profile.future_you || "Dream your future...";
+          
+          const avatarDiv = document.getElementById("profile-avatar");
+          if (profileData.profile.avatar) {
+            avatarDiv.innerHTML = `<span class="text-2xl">${profileData.profile.avatar}</span>`;
+          } else {
+            avatarDiv.innerText = (profileData.profile.name || "ST").slice(0,2).toUpperCase();
+          }
+
+          const skillsContainer = document.getElementById("profile-skills-tags");
+          const displaySkills = profileData.profile.skills || [];
+          if (displaySkills.length > 0) {
+            skillsContainer.innerHTML = displaySkills.slice(0, 8).map(s => `
+              <span class="px-2 py-0.5 bg-background/10 rounded-full font-mono text-[10px] uppercase">${s}</span>
+            `).join("");
+          } else {
+            skillsContainer.innerHTML = `<span class="text-[10px] opacity-50 font-mono">ADD SOME SKILLS</span>`;
+          }
+
+          // Fetch matching opportunities
+          await loadFeedOpportunities(true);
+          await loadWatchlistWidget();
+
+        } catch (err) {
+          console.error("Failed to initialize feed:", err);
+        }
+      }
+
+      // Load items matching current category/query
+      async function loadFeedOpportunities(isFresh = false) {
+        if (isFresh) {
+          currentPage = 1;
+          feedOpps = [];
+          swipeIndex = 0;
+          swipeHistory = [];
+        }
+
+        const profileTokens = Array.from(new Set([
+          ...(profileData.profile.skills || []),
+          ...(profileData.profile.interests || []),
+          profileData.profile.field
+        ].filter(Boolean)));
+
+        try {
+          const res = await fetch("/api/opportunities", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              category: activeCategory,
+              q: activeQuery,
+              page: currentPage,
+              limit: 20,
+              profileTokens: profileTokens
+            })
+          });
+
+          if (res.ok) {
+            const items = await res.json();
+            
+            // Filter out opportunities that the user has already swiped on (interested, passed, or saved)
+            const swipedIds = new Set([
+              ...profileData.saved,
+              ...profileData.interested,
+              ...profileData.passed
+            ]);
+            
+            const newItems = items.filter(item => !swipedIds.has(item.id));
+
+            if (isFresh) {
+              feedOpps = newItems;
+            } else {
+              feedOpps = [...feedOpps, ...newItems];
+            }
+
+            // Update statistics banner
+            document.getElementById("stats-banner").innerText = `${feedOpps.length} opps · ${profileData.saved.length} saved · ${profileData.interested.length} ♥`;
+
+            renderSwipeStack();
+            renderFeedList();
+
+            // Toggle load-more button
+            const loadMoreBtn = document.getElementById("load-more-btn");
+            if (items.length === 20) {
+              loadMoreBtn.classList.remove("hidden");
+            } else {
+              loadMoreBtn.classList.add("hidden");
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load opportunities:", err);
+        }
+      }
+
+      // Helper to render original custom match pie donut chart
+      function renderMatchPie(score, size = 120, label = true) {
+        const color = score >= 70 ? "var(--primary)" : score >= 40 ? "var(--lime)" : "var(--muted-foreground)";
+        return `
+          <div class="relative inline-flex items-center justify-center shrink-0" style="width: ${size}px; height: ${size}px;">
+            <svg class="size-full animate-entry" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.91549430918954" fill="none" stroke="rgba(0, 0, 0, 0.08)" stroke-width="4.5" />
+              <circle cx="18" cy="18" r="15.91549430918954" fill="none" stroke="${color}" stroke-width="4.5" stroke-dasharray="${score} ${100 - score}" stroke-dashoffset="25" transform="rotate(-90 18 18)" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div class="font-display text-2xl leading-none">${score}%</div>
+              ${label ? `<div class="font-mono text-[8px] uppercase tracking-widest text-muted-foreground mt-0.5">match</div>` : ""}
+            </div>
+          </div>
+        `;
+      }
+
+      // Helper to calculate exact deadline remaining time
+      function getCountdownTimeLeft(deadline, short = false) {
+        const diffInSeconds = Math.floor((new Date(deadline).getTime() - Date.now()) / 1000);
+        
+        if (diffInSeconds <= 0) {
+          return short ? "Today" : "Ended";
+        }
+
+        const days = Math.floor(diffInSeconds / (3600 * 24));
+        const hours = Math.floor((diffInSeconds % (3600 * 24)) / 3600);
+        const minutes = Math.floor((diffInSeconds % 3600) / 60);
+        const seconds = diffInSeconds % 60;
+
+        if (short) {
+          if (days > 0) return `In ${days}d`;
+          if (hours > 0) return `In ${hours}h`;
+          if (minutes > 0) return `In ${minutes}m`;
+          return `In ${seconds}s`;
+        }
+
+        if (days > 7) {
+          return `${days}d left`;
+        }
+        
+        if (days > 0) {
+          return `${days}d ${hours}h left`;
+        }
+        
+        if (hours > 0) {
+          return `${hours}h ${minutes}m left`;
+        }
+        
+        return `${minutes}m ${seconds}s left`;
+      }
+
+      // Helper to format posted distance
+      function formatPostedTime(dateString) {
+        const diffInMs = Date.now() - new Date(dateString).getTime();
+        const diffInMins = Math.floor(diffInMs / 60000);
+        const diffInHours = Math.floor(diffInMins / 60);
+        const diffInDays = Math.floor(diffInHours / 24);
+        const diffInMonths = Math.floor(diffInDays / 30);
+
+        if (diffInMonths > 0) return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
+        if (diffInDays > 0) return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+        if (diffInHours > 0) return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+        if (diffInMins > 0) return `${diffInMins} minute${diffInMins > 1 ? "s" : ""} ago`;
+        return "just now";
+      }
+
+      // Stats indicator updater
+      function updateFeedStatsIndicator() {
+        const passedIds = new Set(profileData.passed || []);
+        const swipeQueue = feedOpps.filter(opp => !passedIds.has(opp.id));
+        const remaining = swipeQueue.length - swipeIndex;
+        document.getElementById("stats-banner").innerText = `${Math.max(0, remaining)} opps · ${profileData.saved.length} saved · ${profileData.interested.length} ♥`;
+      }
+
+      // Render swipe stack (matches SwipeStack.tsx)
+      function renderSwipeStack() {
+        const stackWrapper = document.getElementById("swipe-stack-cards-wrapper");
+        const undoBtn = document.getElementById("swipe-undo-btn");
+        const currentIndexEl = document.getElementById("swipe-current-index");
+        const queueTotalEl = document.getElementById("swipe-queue-total");
+
+        const passedIds = new Set(profileData.passed || []);
+        const swipeQueue = feedOpps.filter(opp => !passedIds.has(opp.id));
+
+        queueTotalEl.innerText = swipeQueue.length;
+        currentIndexEl.innerText = Math.min(swipeIndex + 1, swipeQueue.length);
+
+        // Enable/disable undo button
+        undoBtn.disabled = swipeHistory.length === 0;
+
+        stackWrapper.innerHTML = "";
+
+        const current = swipeQueue[swipeIndex];
+        const next = swipeQueue[swipeIndex + 1];
+
+        if (!current) {
+          stackWrapper.innerHTML = `
+            <div class="absolute inset-0 border-2 border-dashed border-foreground/20 rounded-[28px] p-10 flex flex-col items-center justify-center text-center bg-card">
+              <p class="font-display text-3xl uppercase">You're all caught up.</p>
+              <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground mt-2">
+                Scroll down for the full feed.
+              </p>
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
+
+        // Render Next (Stacked Card behind) — fully opaque, no content visible
+        if (next) {
+          const nextCategoryColor = categoryColors[next.category] || "bg-foreground text-background";
+
+          const nextEl = document.createElement("div");
+          // Fully opaque, no text — just a solid deck card peeking behind
+          nextEl.className = "absolute inset-0 flex flex-col bg-card border-2 border-foreground rounded-[28px] shadow-stamp-lg overflow-hidden scale-[0.94] translate-y-3 pointer-events-none transition-all z-0";
+          nextEl.innerHTML = `
+            <div class="shrink-0 px-5 py-2 ${nextCategoryColor} font-mono text-[10px] font-bold uppercase tracking-wider opacity-0">
+              &nbsp;
+            </div>
+            <div class="flex-1 bg-card"></div>
+          `;
+          stackWrapper.appendChild(nextEl);
+        }
+
+        // Render Current Card on top
+        const currentScore = getMatchScore(profileData.profile, current.tags || []);
+        const currentCategoryColor = categoryColors[current.category] || "bg-foreground text-background";
+        const currentTagsHtml = (current.tags || []).slice(0, 4).map(t => `
+          <span class="px-2 py-0.5 border border-foreground/15 rounded-full font-mono text-[10px] uppercase">${t}</span>
+        `).join("");
+
+        const currentEl = document.createElement("div");
+        currentEl.className = "absolute inset-0 flex flex-col bg-card border-2 border-foreground rounded-[28px] shadow-stamp-lg overflow-hidden cursor-grab active:cursor-grabbing transition-transform z-10";
+        currentEl.setAttribute("id", "active-swipe-card");
+
+        currentEl.innerHTML = `
+          <div class="shrink-0 px-5 py-2 ${currentCategoryColor} font-mono text-[10px] font-bold uppercase tracking-wider">
+            ${current.category} · ${current.organization} ${current.verified ? "✓" : ""}
+          </div>
+          <div class="p-6 md:p-8 flex-1 flex flex-col min-h-0 pb-8 relative">
+            <!-- Overlay stamps -->
+            <div id="stamp-interested" class="absolute top-6 left-6 px-3 py-1 border-4 border-primary text-primary font-display text-3xl uppercase rotate-[-12deg] rounded-lg opacity-0 pointer-events-none transition-opacity duration-100">
+              Interested
+            </div>
+            <div id="stamp-pass" class="absolute top-6 right-6 px-3 py-1 border-4 border-foreground text-foreground font-display text-3xl uppercase rotate-[12deg] rounded-lg opacity-0 pointer-events-none transition-opacity duration-100">
+              Pass
+            </div>
+
+            <p class="text-sm text-foreground/75 mb-4 line-clamp-2">${current.description}</p>
+            <div class="flex items-start justify-between gap-4">
+              <h3 class="font-display text-3xl md:text-4xl uppercase tracking-tight leading-[0.95] flex-1 text-balance">
+                ${current.title}
+              </h3>
+              ${renderMatchPie(currentScore, 86, true)}
+            </div>
+
+            <div class="mt-auto pt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span class="inline-flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="size-3.5"></i>
+                ${current.location}
+              </span>
+              ${current.work_mode ? `
+                <span class="inline-flex items-center gap-1.5 font-mono uppercase text-[10px] border border-foreground/20 px-2 py-0.5 rounded-full">
+                  ${current.work_mode}
+                </span>
+              ` : ""}
+              <div class="flex flex-wrap gap-1">
+                ${currentTagsHtml}
+              </div>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between border-t border-foreground/5 pt-3">
+              <a href="/opportunity/${current.id}" class="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-foreground hover:text-primary transition-colors">
+                Tap for full details <i data-lucide="arrow-right" class="size-3.5"></i>
+              </a>
+              <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                <i data-lucide="clock" class="size-3"></i>
+                <span>${getCountdownTimeLeft(current.deadline, true)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        stackWrapper.appendChild(currentEl);
+        if (window.lucide) window.lucide.createIcons();
+
+        setupActiveCardDrag(currentEl, current.id);
+      }
+
+      // Gesture drag mechanics
+      function setupActiveCardDrag(card, oppId) {
+        let startX = 0;
+        let startY = 0;
+        let isDragging = false;
+
+        const stampInterested = card.querySelector("#stamp-interested");
+        const stampPass = card.querySelector("#stamp-pass");
+
+        const onDragStart = (x, y) => {
+          startX = x;
+          startY = y;
+          isDragging = true;
+          card.style.transition = "none";
+        };
+
+        const onDragMove = (x, y) => {
+          if (!isDragging) return;
+          const deltaX = x - startX;
+          const deltaY = y - startY;
+          const rot = deltaX * 0.06;
+
+          card.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rot}deg)`;
+
+          if (deltaX > 20) {
+            stampInterested.style.opacity = Math.min(1, (deltaX - 20) / 100);
+            stampPass.style.opacity = 0;
+          } else if (deltaX < -20) {
+            stampPass.style.opacity = Math.min(1, (-deltaX - 20) / 100);
+            stampInterested.style.opacity = 0;
+          } else {
+            stampInterested.style.opacity = 0;
+            stampPass.style.opacity = 0;
+          }
+        };
+
+        const onDragEnd = () => {
+          if (!isDragging) return;
+          isDragging = false;
+
+          const transformStr = card.style.transform;
+          const matchX = transformStr.match(/translate\(([-\d.]+)px/);
+          const deltaX = matchX ? parseFloat(matchX[1]) : 0;
+
+          if (deltaX > 120) {
+            executeSwipeAction("right", oppId);
+          } else if (deltaX < -120) {
+            executeSwipeAction("left", oppId);
+          } else {
+            card.style.transition = "transform 0.2s ease-out";
+            card.style.transform = "translate(0px, 0px) rotate(0deg)";
+            stampInterested.style.opacity = 0;
+            stampPass.style.opacity = 0;
+          }
+        };
+
+        card.addEventListener("mousedown", (e) => {
+          if (e.target.closest("a") || e.target.closest("button") || e.target.closest("svg")) return;
+          onDragStart(e.clientX, e.clientY);
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          onDragMove(e.clientX, e.clientY);
+        });
+
+        document.addEventListener("mouseup", onDragEnd);
+
+        card.addEventListener("touchstart", (e) => {
+          if (e.target.closest("a") || e.target.closest("button") || e.target.closest("svg")) return;
+          const touch = e.touches[0];
+          onDragStart(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener("touchmove", (e) => {
+          const touch = e.touches[0];
+          onDragMove(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener("touchend", onDragEnd);
+      }
+
+      // Execute swipe animation and endpoint submission
+      async function executeSwipeAction(direction, oppId) {
+        const card = document.getElementById("active-swipe-card");
+        if (card) {
+          const offscreenWidth = window.innerWidth + 100;
+          const targetX = direction === "right" ? offscreenWidth : -offscreenWidth;
+          card.style.transition = "transform 0.3s ease-out, opacity 0.3s ease-out";
+          card.style.transform = `translate(${targetX}px, 0px) rotate(${direction === 'right' ? 25 : -25}deg)`;
+          card.style.opacity = 0;
+        }
+
+        const passedIds = new Set(profileData.passed || []);
+        const swipeQueue = feedOpps.filter(opp => !passedIds.has(opp.id));
+        const currentOpp = swipeQueue[swipeIndex];
+        swipeHistory.push({ opp: currentOpp, direction });
+
+        setTimeout(async () => {
+          swipeIndex++;
+          renderSwipeStack();
+          renderFeedList();
+          updateFeedStatsIndicator();
+
+          try {
+            if (direction === "right") {
+              const res = await fetch("/api/user/interested/toggle", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: oppId })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.interested) {
+                  if (!profileData.interested.includes(oppId)) profileData.interested.push(oppId);
+                } else {
+                  profileData.interested = profileData.interested.filter(id => id !== oppId);
+                }
+                updateFeedStatsIndicator();
+              }
+            } else {
+              const res = await fetch("/api/user/passed/add", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: oppId })
+              });
+              if (res.ok) {
+                if (!profileData.passed.includes(oppId)) profileData.passed.push(oppId);
+                updateFeedStatsIndicator();
+              }
+            }
+          } catch (err) {
+            console.error("Failed to sync swipe:", err);
+          }
+        }, 250);
+      }
+
+      // Swipe undo handler
+      async function undoLastSwipe() {
+        if (swipeHistory.length === 0) return;
+        const last = swipeHistory.pop();
+        swipeIndex = Math.max(0, swipeIndex - 1);
+        
+        renderSwipeStack();
+        renderFeedList();
+        updateFeedStatsIndicator();
+
+        const oppId = last.opp.id;
+        try {
+          if (last.direction === "right") {
+            const res = await fetch("/api/user/interested/toggle", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: oppId })
+            });
+            if (res.ok) {
+              profileData.interested = profileData.interested.filter(id => id !== oppId);
+              updateFeedStatsIndicator();
+            }
+          } else {
+            const res = await fetch("/api/user/passed/remove", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: oppId })
+            });
+            if (res.ok) {
+              profileData.passed = profileData.passed.filter(id => id !== oppId);
+              updateFeedStatsIndicator();
+            }
+          }
+        } catch (err) {
+          console.error("Failed to undo swipe:", err);
+        }
+      }
+
+      const categoryColors = {
+        internship: "bg-primary text-primary-foreground",
+        scholarship: "bg-secondary text-secondary-foreground",
+        competition: "bg-foreground text-background",
+        fellowship: "bg-indigo-600 text-white",
+        hackathon: "bg-lime text-foreground border border-foreground/10"
+      };
+
+      // Render full feed matches list (matches OpportunityCard.tsx)
+      function renderFeedList() {
+        const feedList = document.getElementById("feed-list");
+        feedList.innerHTML = "";
+
+        if (feedOpps.length === 0) {
+          feedList.innerHTML = `
+            <div class="border-2 border-dashed border-foreground/20 rounded-3xl p-16 text-center animate-entry">
+              <p class="font-display text-4xl uppercase">Nothing matches.</p>
+              <p class="font-mono text-xs uppercase tracking-widest text-muted-foreground mt-2">
+                Try clearing the filters or keyword queries.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        feedList.innerHTML = feedOpps.map((opp, index) => {
+          const score = getMatchScore(profileData.profile, opp.tags || []);
+          const isSaved = profileData.saved.includes(opp.id);
+          const colorClass = categoryColors[opp.category] || "bg-foreground text-background";
+
+          const now = Date.now();
+          const startsIn = opp.application_start_date ? Math.floor((new Date(opp.application_start_date).getTime() - now) / (1000 * 3600 * 24)) : -1;
+          const daysLeft = Math.floor((new Date(opp.deadline).getTime() - now) / (1000 * 3600 * 24));
+          const urgent = startsIn <= 0 && daysLeft <= 7;
+          const isFuture = startsIn > 0;
+
+          const tagsHtml = (opp.tags || []).slice(0, 3).map(t => `
+            <span class="px-2 py-0.5 border border-foreground/15 rounded-full font-mono text-[10px] uppercase">${t}</span>
+          `).join("");
+
+          return `
+            <article
+              class="animate-entry bg-card border-2 border-foreground rounded-[28px] shadow-stamp hover:shadow-stamp-lg hover:-translate-x-1 hover:-translate-y-1 transition-all duration-200"
+              style="animation-delay: ${index * 60}ms"
+            >
+              <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-4">
+                    <span class="px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${colorClass}">
+                      ${opp.category}
+                    </span>
+                    <span class="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+                      · Posted ${formatPostedTime(opp.posted_at || opp.created_at)}
+                    </span>
+                    ${opp.featured ? `
+                      <span class="px-2 py-0.5 bg-lime text-foreground font-mono text-[10px] font-bold uppercase">
+                        ★ Featured
+                      </span>
+                    ` : ""}
+                    ${opp.verified ? `
+                      <span class="px-2 py-0.5 bg-blue-500 text-white font-mono text-[10px] font-bold uppercase rounded-sm">
+                        ✓ Verified
+                      </span>
+                    ` : ""}
+                  </div>
+
+                  <a href="/opportunity/${opp.id}" class="block group">
+                    <h3 class="font-display text-3xl md:text-4xl uppercase tracking-tight leading-[0.95] mb-3 group-hover:text-primary transition-colors text-balance">
+                      ${opp.title}
+                    </h3>
+                  </a>
+                  <p class="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
+                    ${opp.organization}
+                  </p>
+                  <p class="text-sm leading-relaxed text-foreground/70 max-w-prose line-clamp-2">
+                    ${opp.description}
+                  </p>
+
+                  <div class="flex flex-wrap items-center gap-4 mt-5 text-xs text-muted-foreground">
+                    <span class="inline-flex items-center gap-1.5">
+                      <i data-lucide="map-pin" class="size-3.5"></i>
+                      ${opp.location}
+                    </span>
+                    ${opp.work_mode ? `
+                      <span class="inline-flex items-center gap-1.5 font-mono uppercase text-[10px] border border-foreground/20 px-2 py-0.5 rounded-full">
+                        ${opp.work_mode}
+                      </span>
+                    ` : ""}
+                    ${opp.participants ? `
+                      <span class="inline-flex items-center gap-1.5">
+                        <i data-lucide="users" class="size-3.5"></i>
+                        ${opp.participants.toLocaleString()} applied
+                      </span>
+                    ` : ""}
+                    <div class="flex flex-wrap gap-1.5">
+                      ${tagsHtml}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex md:flex-col md:items-end justify-between md:w-44 gap-3 md:border-l-2 md:border-dashed md:border-foreground/20 md:pl-6">
+                  <div class="text-left md:text-right">
+                    <div class="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+                      ${isFuture ? "Opens in" : urgent ? "Closing" : "Deadline"}
+                    </div>
+                    <div class="font-display text-xl md:text-2xl uppercase leading-none mt-1 ${urgent ? 'text-primary' : ''}">
+                      ${getCountdownTimeLeft(opp.deadline, false)}
+                    </div>
+                    ${opp.prize_amount ? `
+                      <div class="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mt-2">
+                        ${opp.prize_amount}
+                      </div>
+                    ` : ""}
+                  </div>
+                  <div class="md:self-end">
+                    ${renderMatchPie(score, 84, true)}
+                  </div>
+
+                  <div class="flex md:flex-col gap-2 md:w-full">
+                    <a
+                      href="/opportunity/${opp.id}"
+                      class="flex-1 text-center py-2.5 bg-foreground text-background font-mono text-[11px] font-bold uppercase rounded-lg hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center"
+                    >
+                      View
+                    </a>
+                    <button
+                      type="button"
+                      class="save-toggle-btn flex items-center justify-center gap-2 shrink-0 py-2.5 px-4 rounded-lg border-2 border-foreground font-mono text-[11px] font-bold uppercase transition-colors ${isSaved ? 'bg-secondary text-secondary-foreground' : 'bg-card hover:bg-accent'}"
+                      data-id="${opp.id}"
+                    >
+                      ${isSaved ? `
+                        <i data-lucide="bookmark-check" class="size-4"></i> Saved
+                      ` : `
+                        <i data-lucide="bookmark" class="size-4"></i> Save
+                      `}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join("");
+
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      // Actions delegator in feed matches list
+      const feedList = document.getElementById("feed-list");
+      feedList.addEventListener("click", async (e) => {
+        const saveBtn = e.target.closest(".save-toggle-btn");
+        if (!saveBtn) return;
+
+        const id = saveBtn.getAttribute("data-id");
+        try {
+          const res = await fetch("/api/user/saved/toggle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            
+            // Toggle local tracking
+            if (data.saved) {
+              if (!profileData.saved.includes(id)) profileData.saved.push(id);
+            } else {
+              profileData.saved = profileData.saved.filter(s => s !== id);
+            }
+
+            // Sync with swipe stack (remove saved item from feed lists)
+            feedOpps = feedOpps.filter(o => o.id !== id);
+            renderSwipeStack();
+            renderFeedList();
+            await loadWatchlistWidget();
+          }
+        } catch (err) {
+          console.error("Failed to save:", err);
+        }
+      });
+
+      // Load Watchlist widget
+      async function loadWatchlistWidget() {
+        const watchlistList = document.getElementById("watchlist-list");
+        watchlistList.innerHTML = "";
+
+        if (!profileData.saved || profileData.saved.length === 0) {
+          watchlistList.innerHTML = `<li class="font-mono text-[9px] uppercase opacity-50">No saved items.</li>`;
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/opportunities/by-ids", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: profileData.saved })
+          });
+
+          if (res.ok) {
+            const savedItems = await res.json();
+            const sorted = savedItems.sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
+            
+            watchlistList.innerHTML = sorted.map(item => `
+              <li class="border-l-2 border-primary pl-3">
+                <div class="font-mono text-[9px] uppercase opacity-60">${formatDeadline(item.deadline)}</div>
+                <div class="text-xs font-semibold leading-tight truncate mt-0.5">${item.title}</div>
+              </li>
+            `).join("");
+          }
+        } catch (err) {
+          console.error("Failed to load watchlist widget:", err);
+        }
+
+        // Refresh deadline timer whenever watchlist updates
+        await refreshDeadlineTimer();
+      }
+
+      // ── Deadline Timer Widget ───────────────────────────────────────────
+      let _timerInterval = null;
+      let _timerTargetOpp = null;
+
+      async function refreshDeadlineTimer() {
+        const widget     = document.getElementById("deadline-timer-widget");
+        const timerEmpty  = document.getElementById("timer-empty");
+        const timerActive = document.getElementById("timer-active");
+        const timerName   = document.getElementById("timer-opp-name");
+        const timerLabel  = document.getElementById("timer-deadline-label");
+        if (!widget) return;
+
+        // Gather all tracked IDs (saved + interested)
+        const trackedIds = [...new Set([
+          ...(profileData.saved || []),
+          ...(profileData.interested || [])
+        ])];
+
+        widget.classList.remove("hidden");
+        widget.classList.add("flex");
+
+        if (trackedIds.length === 0) {
+          timerEmpty.classList.remove("hidden");
+          timerActive.classList.add("hidden");
+          clearInterval(_timerInterval);
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/opportunities/by-ids", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: trackedIds })
+          });
+
+          if (!res.ok) return;
+          const items = await res.json();
+
+          // Find the item with the soonest future deadline
+          const now = Date.now();
+          const upcoming = items
+            .filter(item => new Date(item.deadline).getTime() > now)
+            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+          if (upcoming.length === 0) {
+            timerEmpty.classList.remove("hidden");
+            timerActive.classList.add("hidden");
+            clearInterval(_timerInterval);
+            return;
+          }
+
+          _timerTargetOpp = upcoming[0];
+          const totalMs = new Date(_timerTargetOpp.deadline).getTime() - new Date(_timerTargetOpp.posted_at || _timerTargetOpp.created_at || now).getTime();
+
+          timerEmpty.classList.add("hidden");
+          timerActive.classList.remove("hidden");
+          timerName.textContent = _timerTargetOpp.title;
+          timerLabel.textContent = `Deadline: ${new Date(_timerTargetOpp.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+
+          // Start ticking
+          clearInterval(_timerInterval);
+          function tick() {
+            const msLeft = new Date(_timerTargetOpp.deadline).getTime() - Date.now();
+            if (msLeft <= 0) {
+              document.getElementById("timer-display").textContent = "ENDED";
+              document.getElementById("timer-unit").textContent = "";
+              document.getElementById("timer-progress-bar").style.width = "0%";
+              clearInterval(_timerInterval);
+              return;
+            }
+
+            const days    = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+            const hours   = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((msLeft % (1000 * 60)) / 1000);
+
+            const display = document.getElementById("timer-display");
+            const bar     = document.getElementById("timer-progress-bar");
+
+            if (days >= 1) {
+              display.textContent = `${days}D ${String(hours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;
+              document.getElementById("timer-unit").textContent = "days left";
+            } else {
+              display.textContent = `${String(hours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+              document.getElementById("timer-unit").textContent = "left today";
+            }
+
+            // Urgent: under 24h — turn red
+            const isUrgent = msLeft < 86400000;
+            display.style.color = isUrgent ? "var(--primary)" : "";
+            bar.style.backgroundColor = isUrgent ? "var(--primary)" : "";
+
+            // Progress bar based on time elapsed vs total window
+            const pct = totalMs > 0 ? Math.max(0, Math.min(100, (msLeft / totalMs) * 100)) : 0;
+            bar.style.width = pct + "%";
+          }
+
+          tick();
+          _timerInterval = setInterval(tick, 1000);
+
+        } catch (err) {
+          console.error("Failed to load deadline timer:", err);
+        }
+      }
+
+      // Toggle timer expand/collapse
+      let _timerExpanded = true;
+      document.getElementById("toggle-timer-btn").addEventListener("click", () => {
+        _timerExpanded = !_timerExpanded;
+        const body  = document.getElementById("timer-body");
+        const arrow = document.getElementById("timer-arrow");
+        body.style.display  = _timerExpanded ? "block" : "none";
+        arrow.style.transform = _timerExpanded ? "rotate(0deg)" : "rotate(180deg)";
+      });
+
+      // Toggle Watchlist expanded UI
+      let isWatchlistExpanded = true;
+      document.getElementById("toggle-watchlist-btn").addEventListener("click", () => {
+        isWatchlistExpanded = !isWatchlistExpanded;
+        const list = document.getElementById("watchlist-list");
+        const arrow = document.getElementById("watchlist-arrow");
+
+        if (isWatchlistExpanded) {
+          list.classList.remove("hidden");
+          arrow.style.transform = "rotate(0deg)";
+        } else {
+          list.classList.add("hidden");
+          arrow.style.transform = "rotate(180deg)";
+        }
+      });
+
+      // Filter Rails events
+      const catFilters = document.getElementById("category-filters");
+      catFilters.addEventListener("click", (e) => {
+        const btn = e.target.closest(".cat-btn");
+        if (!btn) return;
+
+        // Reset all buttons styling
+        document.querySelectorAll(".cat-btn").forEach(b => {
+          b.className = "cat-btn px-3 py-1.5 border-2 border-foreground hover:bg-foreground/5 rounded-xl font-mono text-[10px] font-bold uppercase transition-all";
+        });
+
+        // Activate clicked button styling
+        btn.className = "cat-btn px-3 py-1.5 border-2 border-foreground bg-foreground text-background rounded-xl font-mono text-[10px] font-bold uppercase transition-all";
+        activeCategory = btn.getAttribute("data-avatar") || btn.getAttribute("data-cat");
+        
+        loadFeedOpportunities(true);
+      });
+
+      // Search queries event listeners (debounced)
+      let searchTimeout = null;
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          activeQuery = e.target.value.trim();
+          loadFeedOpportunities(true);
+        }, 300);
+      });
+
+      // Load More button click
+      document.getElementById("load-more-btn").addEventListener("click", () => {
+        currentPage++;
+        loadFeedOpportunities(false);
+      });
+
+      // Swipe Stack Button Event Listeners
+      document.getElementById("swipe-undo-btn").addEventListener("click", undoLastSwipe);
+
+      document.getElementById("swipe-btn-pass").addEventListener("click", () => {
+        const passedIds = new Set(profileData.passed || []);
+        const swipeQueue = feedOpps.filter(opp => !passedIds.has(opp.id));
+        const current = swipeQueue[swipeIndex];
+        if (current) {
+          executeSwipeAction("left", current.id);
+        }
+      });
+
+      document.getElementById("swipe-btn-interested").addEventListener("click", () => {
+        const passedIds = new Set(profileData.passed || []);
+        const swipeQueue = feedOpps.filter(opp => !passedIds.has(opp.id));
+        const current = swipeQueue[swipeIndex];
+        if (current) {
+          executeSwipeAction("right", current.id);
+        }
+      });
+
+      // Initialize Feed
+      initializeFeed();
+    });
+  </script>
+</body>
+</html>

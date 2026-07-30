@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOP — Deadline Calendar</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            border: 'var(--border)',
+            lime: 'var(--lime)',
+            amber: 'var(--amber)',
+            indigo: 'var(--indigo)',
+          },
+          fontFamily: {
+            display: ['Anton', 'Impact', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+  <!-- Sticky Ticker Banner -->
+  <div class="sticky top-0 z-50 bg-primary text-primary-foreground py-1.5 overflow-hidden border-b-2 border-foreground">
+    <div id="marquee-ticker" class="marquee-content gap-10 whitespace-nowrap font-mono text-[11px] font-bold uppercase tracking-tight">
+      <span class="inline-flex items-center gap-3">
+        <span>LOOP · Loading opportunities</span>
+        <span class="opacity-50">✦</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-[28px] z-40 bg-background/80 backdrop-blur-md border-b-2 border-foreground/10">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <a href="/" class="font-display text-3xl uppercase tracking-tighter italic leading-none shrink-0">
+        LOOP<span class="text-primary">.</span>
+      </a>
+      <nav id="header-nav" class="flex items-center gap-1"></nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-6 py-10 lg:py-14 grid grid-cols-12 gap-8 lg:gap-12 animate-entry">
+    
+    <!-- Left Column: Calendar Grid -->
+    <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
+      
+      <!-- Calendar Header controls -->
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Deadline Tracker</div>
+          <h1 id="month-title" class="font-display text-4xl uppercase tracking-tight mt-1">July 2026</h1>
+        </div>
+        <div class="flex gap-2">
+          <button id="prev-month-btn" class="p-2 border-2 border-foreground rounded-xl hover:bg-foreground/5 transition-all"><i data-lucide="chevron-left" class="size-4"></i></button>
+          <button id="next-month-btn" class="p-2 border-2 border-foreground rounded-xl hover:bg-foreground/5 transition-all"><i data-lucide="chevron-right" class="size-4"></i></button>
+        </div>
+      </div>
+
+      <!-- Calendar Body Grid -->
+      <div class="p-4 bg-card border-2 border-foreground rounded-3xl shadow-stamp">
+        
+        <!-- Day Names -->
+        <div class="grid grid-cols-7 gap-1 text-center font-mono text-[9px] uppercase text-muted-foreground font-bold border-b border-foreground/10 pb-2 mb-2">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+
+        <!-- Days Grid -->
+        <div id="calendar-days" class="grid grid-cols-7 gap-2 min-h-[300px]">
+          <!-- Populated by JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Column: Sidebar Deadlines Checklist -->
+    <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+      <div class="p-6 bg-foreground text-background rounded-3xl shadow-stamp-lg">
+        <h2 class="font-mono text-[10px] uppercase tracking-widest opacity-60 mb-4">Upcoming Closures</h2>
+        <ul id="upcoming-checklist" class="space-y-4">
+          <!-- Dynamically populated -->
+          <li class="font-mono text-[10px] uppercase tracking-wider opacity-50">No items closing soon.</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Popup Modal for Day Selection -->
+  <div id="day-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-foreground/20 backdrop-blur-sm px-4">
+    <div class="w-full max-w-md bg-background border-2 border-foreground rounded-3xl p-6 shadow-stamp-lg animate-entry">
+      <div class="flex items-center justify-between border-b border-foreground/10 pb-3 mb-4">
+        <h3 id="modal-date-title" class="font-display text-2xl uppercase">15 July 2026</h3>
+        <button id="close-modal-btn" class="size-8 border-2 border-foreground rounded-full flex items-center justify-center hover:bg-foreground/5 transition-all">&times;</button>
+      </div>
+      <div id="modal-list" class="space-y-4">
+        <!-- Rendered list of items closing on that day -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-foreground/10 mt-24 py-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
+      <div>
+        <div class="font-display text-3xl uppercase tracking-tighter italic">LOOP.</div>
+        <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mt-2">v.03 — built for the curious</p>
+      </div>
+      <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        © 2026 · No more missed deadlines.
+      </div>
+    </div>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Guard page
+      const user = await requireAuth();
+      if (!user) return;
+
+      renderHeader(user);
+      initMarqueeTicker();
+
+      let savedOpps = [];
+      let currentDate = new Date(); // Active viewed month/year pointer
+
+      // Fetch saved opportunities
+      try {
+        const profileRes = await fetch("/api/user/profile");
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          
+          if (profileData.saved && profileData.saved.length > 0) {
+            const oppsRes = await fetch("/api/opportunities/by-ids", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: profileData.saved })
+            });
+            if (oppsRes.ok) {
+              savedOpps = await oppsRes.json();
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load saved items:", err);
+      }
+
+      // Populate sidebar checklists
+      const checklistContainer = document.getElementById("upcoming-checklist");
+      const sortedOpps = [...savedOpps].sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+      
+      if (sortedOpps.length > 0) {
+        checklistContainer.innerHTML = sortedOpps.slice(0, 6).map(o => {
+          const daysLeft = formatDeadline(o.deadline);
+          return `
+            <li class="border-l-2 border-primary pl-3">
+              <div class="font-mono text-[9px] uppercase opacity-60">${daysLeft}</div>
+              <div class="text-xs font-semibold leading-tight mt-0.5 truncate">${o.title}</div>
+            </li>
+          `;
+        }).join("");
+      }
+
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+      const categoryColors = {
+        internship: "bg-primary",
+        scholarship: "bg-secondary",
+        competition: "bg-foreground",
+        fellowship: "bg-indigo-600",
+        hackathon: "bg-lime border border-foreground/10"
+      };
+
+      // Main Calendar Generator
+      function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // Set Month Title label
+        document.getElementById("month-title").innerText = `${monthNames[month]} ${year}`;
+
+        const calendarDays = document.getElementById("calendar-days");
+        calendarDays.innerHTML = "";
+
+        // First day of month pointer index
+        const firstDayIndex = new Date(year, month, 1).getDay();
+        const totalDays = new Date(year, month + 1, 0).getDate();
+
+        // Render leading empty padding cells
+        for (let i = 0; i < firstDayIndex; i++) {
+          calendarDays.innerHTML += `<div class="p-2 border border-foreground/5 bg-background/30 rounded-xl opacity-30"></div>`;
+        }
+
+        // Render days cells
+        for (let day = 1; day <= totalDays; day++) {
+          const cellDate = new Date(year, month, day);
+          const cellDateString = cellDate.toISOString().split("T")[0];
+
+          // Filter opportunities closing on this date
+          const closingOpps = savedOpps.filter(opp => {
+            const oppDateString = new Date(opp.deadline).toISOString().split("T")[0];
+            return oppDateString === cellDateString;
+          });
+
+          // Render indicator pills/dots
+          let indicatorHtml = "";
+          if (closingOpps.length > 0) {
+            indicatorHtml = `
+              <div class="flex flex-wrap gap-1 mt-1.5 max-h-[24px] overflow-hidden">
+                ${closingOpps.map(opp => {
+                  const color = categoryColors[opp.category] || "bg-foreground";
+                  return `<span class="size-2 rounded-full ${color}" title="${opp.title}"></span>`;
+                }).join("")}
+              </div>
+            `;
+          }
+
+          const isToday = new Date().toDateString() === cellDate.toDateString();
+          const todayClasses = isToday ? "bg-primary/10 border-2 border-primary" : "border border-foreground/10 hover:border-foreground";
+
+          calendarDays.innerHTML += `
+            <div 
+              class="day-cell p-2 bg-background min-h-[75px] rounded-xl flex flex-col justify-between cursor-pointer transition-all ${todayClasses}"
+              data-date="${cellDateString}"
+              data-day="${day}"
+            >
+              <div class="font-mono text-xs font-bold leading-none ${isToday ? 'text-primary' : ''}">${day}</div>
+              ${indicatorHtml}
+            </div>
+          `;
+        }
+
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      // Next / Previous month controllers
+      document.getElementById("prev-month-btn").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+      });
+
+      document.getElementById("next-month-btn").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+      });
+
+      // Day cell modal click dispatcher
+      const modal = document.getElementById("day-modal");
+      const modalTitle = document.getElementById("modal-date-title");
+      const modalList = document.getElementById("modal-list");
+
+      document.getElementById("calendar-days").addEventListener("click", (e) => {
+        const cell = e.target.closest(".day-cell");
+        if (!cell) return;
+
+        const dateStr = cell.getAttribute("data-date");
+        const day = cell.getAttribute("data-day");
+        
+        // Filter items closing on clicked date
+        const closing = savedOpps.filter(opp => {
+          const oppDateString = new Date(opp.deadline).toISOString().split("T")[0];
+          return oppDateString === dateStr;
+        });
+
+        if (closing.length === 0) return;
+
+        const formattedDate = new Date(dateStr).toLocaleDateString("en-US", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+
+        modalTitle.innerText = formattedDate;
+        modalList.innerHTML = closing.map(opp => `
+          <div class="p-4 bg-muted border border-foreground/10 rounded-2xl flex flex-col gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded-full font-mono text-[8px] font-bold uppercase ${categoryColors[opp.category] || 'bg-foreground text-background'}">
+                ${opp.category}
+              </span>
+              <h4 class="font-display text-xl uppercase tracking-tight leading-none mt-1.5">${opp.title}</h4>
+              <div class="font-mono text-[9px] uppercase text-muted-foreground mt-0.5">${opp.organization}</div>
+            </div>
+            <a href="/opportunity/${opp.id}" class="inline-block mt-2 w-full text-center bg-foreground text-background py-2 rounded-xl font-mono text-[10px] font-bold uppercase hover:bg-primary transition-all">Details</a>
+          </div>
+        `).join("");
+
+        modal.classList.remove("hidden");
+      });
+
+      document.getElementById("close-modal-btn").addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.classList.add("hidden");
+      });
+
+      // Initial render
+      renderCalendar();
+    });
+  </script>
+</body>
+</html>

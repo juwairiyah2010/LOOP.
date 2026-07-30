@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — LOOP</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            border: 'var(--border)',
+            lime: 'var(--lime)',
+            amber: 'var(--amber)',
+            indigo: 'var(--indigo)',
+          },
+          fontFamily: {
+            display: ['Anton', 'Impact', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+  <!-- Sticky Ticker Banner -->
+  <div class="sticky top-0 z-50 bg-primary text-primary-foreground py-1.5 overflow-hidden border-b-2 border-foreground">
+    <div id="marquee-ticker" class="marquee-content gap-10 whitespace-nowrap font-mono text-[11px] font-bold uppercase tracking-tight">
+      <span class="inline-flex items-center gap-3">
+        <span>LOOP · Loading opportunities</span>
+        <span class="opacity-50">✦</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-[28px] z-40 bg-background/80 backdrop-blur-md border-b-2 border-foreground/10">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <a href="/" class="font-display text-3xl uppercase tracking-tighter italic leading-none shrink-0">
+        LOOP<span class="text-primary">.</span>
+      </a>
+      <nav id="header-nav" class="flex items-center gap-1"></nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-8 py-16">
+    
+    <!-- Profile Page Header -->
+    <header class="mb-14 animate-entry flex flex-col md:flex-row gap-8 md:items-end justify-between">
+      <div class="flex items-center gap-6">
+        <div id="profile-avatar-container" class="size-24 rounded-full bg-foreground text-background flex items-center justify-center font-display text-4xl uppercase shadow-stamp overflow-hidden cursor-pointer group relative transition-all hover:scale-105 active:scale-95">
+          <div id="profile-avatar-content" class="w-full h-full flex items-center justify-center">
+            <!-- Initial letters or avatar image -->
+          </div>
+          <!-- Upload overlay -->
+          <div class="absolute inset-0 bg-background/85 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-[9px] font-mono font-bold uppercase tracking-widest text-foreground border-2 border-foreground rounded-full">
+            <i data-lucide="camera" class="size-4 mb-1"></i>
+            Edit
+          </div>
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/png, image/jpeg" class="hidden" />
+        <div>
+          <h1 id="profile-display-name" class="font-display text-6xl uppercase tracking-tighter italic leading-none text-balance">
+            Student
+          </h1>
+          <p class="font-mono text-xs uppercase tracking-widest text-muted-foreground mt-3">
+            Your Professional Identity
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="bg-card border-2 border-foreground rounded-2xl p-4 text-center shadow-stamp w-24">
+          <div id="stat-match" class="font-display text-3xl uppercase leading-none">0</div>
+          <div class="font-mono text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">Match</div>
+        </div>
+        <div class="bg-card border-2 border-foreground rounded-2xl p-4 text-center shadow-stamp w-24">
+          <div id="stat-saved" class="font-display text-3xl uppercase leading-none">0</div>
+          <div class="font-mono text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">Saved</div>
+        </div>
+        <div class="bg-card border-2 border-foreground rounded-2xl p-4 text-center shadow-stamp w-24">
+          <div id="stat-applied" class="font-display text-3xl uppercase leading-none">0</div>
+          <div class="font-mono text-[9px] font-bold uppercase tracking-widest mt-1 opacity-70">Applied</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Two-Column Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
+      
+      <!-- Left Column (Basics, Future You, Locations, Interests, Skills) -->
+      <div class="space-y-8">
+        
+        <!-- Name Section -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:40ms]">
+          <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 block">Name</label>
+          <div class="flex gap-2">
+            <input
+              id="name-input"
+              type="text"
+              class="flex-1 bg-background border-2 border-foreground rounded-xl px-4 py-3 font-display text-xl uppercase tracking-tight focus:outline-none"
+            />
+            <button
+              id="save-name-btn"
+              class="bg-foreground text-background px-5 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </section>
+
+        <!-- Future You Section -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:80ms]">
+          <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 block">Future You</label>
+          <p class="text-sm text-foreground/70 mb-5">Describe your dream career, goals, or aspirations.</p>
+          <textarea
+            id="future-you-input"
+            placeholder="In 5 years, I want to be building AI products that..."
+            class="w-full h-32 bg-background border-2 border-foreground rounded-xl p-5 font-mono text-sm resize-none focus:outline-none leading-relaxed"
+          ></textarea>
+        </section>
+
+        <!-- Preferred Locations Section -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:120ms]">
+          <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 block">Preferred Locations</label>
+          <div id="locations-container" class="flex flex-wrap gap-2">
+            <!-- Dynamically populated buttons -->
+          </div>
+        </section>
+
+        <!-- Interests Section -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:160ms]">
+          <div class="flex justify-between items-center mb-5">
+            <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Interests</label>
+            <button id="add-interest-btn" class="inline-flex items-center gap-1 font-mono text-[10px] uppercase font-bold text-primary hover:underline">
+              <i data-lucide="plus" class="size-3"></i> Add Your Own
+            </button>
+          </div>
+          <div id="interests-container" class="flex flex-wrap gap-2.5">
+            <!-- Dynamically populated buttons -->
+          </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:200ms]">
+          <div class="flex justify-between items-center mb-5">
+            <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Skills</label>
+            <button id="add-skill-btn" class="inline-flex items-center gap-1 font-mono text-[10px] uppercase font-bold text-primary hover:underline">
+              <i data-lucide="plus" class="size-3"></i> Add Your Own
+            </button>
+          </div>
+          <div id="skills-container" class="flex flex-wrap gap-2.5 max-h-[350px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
+            <!-- Dynamically populated buttons -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Column (Sticky Note Goal, Resume, Links, AI Feed Generation) -->
+      <div class="space-y-8">
+        
+        <!-- COOKING Sticky Note -->
+        <section class="bg-lime border-2 border-foreground rounded-none shadow-stamp p-7 relative animate-entry [animation-delay:100ms] rotate-2 hover:rotate-0 transition-transform">
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-5 bg-foreground/20 rotate-[-4deg]"></div>
+          <label class="font-display text-4xl uppercase tracking-tighter block mb-3">COOKING</label>
+          <textarea
+            id="goal-input"
+            placeholder="Cracking SWE Internship 2026..."
+            class="w-full h-40 bg-transparent border-none font-mono text-sm resize-none focus:outline-none placeholder:text-foreground/50 leading-relaxed"
+          ></textarea>
+        </section>
+
+        <!-- AI Resume Analyzer -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:120ms]">
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="sparkles" class="size-4 text-primary"></i>
+            <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">AI Resume Analyzer</label>
+          </div>
+          <p class="text-sm text-foreground/70 mb-5 leading-snug">
+            Upload your PDF resume. Our AI will automatically extract your skills, languages, and interests to personalize your feed.
+          </p>
+          
+          <div id="resume-error" class="text-red-500 font-mono text-xs mb-3 font-bold uppercase hidden"></div>
+
+          <label id="resume-upload-label" class="border-2 border-dashed border-foreground/30 rounded-xl p-6 flex flex-col items-center justify-center gap-3 text-center cursor-pointer hover:bg-foreground/5 hover:border-foreground/50 transition-colors">
+            <input 
+              type="file" 
+              id="resume-file-input"
+              accept="application/pdf" 
+              class="hidden" 
+            />
+            <div id="resume-upload-status" class="flex flex-col items-center justify-center gap-3">
+              <i data-lucide="upload" class="size-6 text-foreground/60"></i>
+              <span class="font-mono text-xs uppercase tracking-widest font-bold">Select PDF (Max 10MB)</span>
+            </div>
+          </label>
+        </section>
+
+        <!-- Professional Links -->
+        <section class="bg-card border-2 border-foreground rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:140ms]">
+          <div class="flex justify-between items-center mb-5">
+            <label class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">Professional Links</label>
+            <button id="toggle-edit-links-btn" class="font-mono text-[10px] uppercase font-bold text-primary hover:underline">
+              EDIT
+            </button>
+          </div>
+          <div class="space-y-5" id="links-container">
+            <!-- Dynamically populated links/inputs -->
+          </div>
+        </section>
+
+        <!-- AI Personalized Feed -->
+        <section class="bg-primary/10 border-2 border-primary rounded-3xl shadow-stamp p-8 animate-entry [animation-delay:160ms]">
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="zap" class="size-4 text-primary"></i>
+            <label class="font-mono text-[10px] uppercase tracking-widest text-primary font-bold">Generate Personalized Feed</label>
+          </div>
+          <p class="text-sm text-foreground/70 mb-5 leading-snug">
+            Let our AI generate 5 realistic opportunities tailored perfectly to your skills, interests, and location preferences in real-time.
+          </p>
+          
+          <div id="generate-feed-error" class="text-red-500 font-mono text-xs mb-3 font-bold uppercase hidden"></div>
+
+          <button
+            id="generate-feed-btn"
+            class="w-full py-3 bg-primary text-primary-foreground rounded-xl font-mono text-xs font-bold uppercase hover:opacity-90 transition-all shadow-stamp flex items-center justify-center gap-2"
+          >
+            <i data-lucide="sparkles" class="size-4"></i>
+            Generate My Feed ✨
+          </button>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-foreground/10 mt-24 py-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
+      <div>
+        <div class="font-display text-3xl uppercase tracking-tighter italic">LOOP.</div>
+        <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mt-2">v.03 — built for the curious</p>
+      </div>
+      <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        © 2026 · No more missed deadlines.
+      </div>
+    </div>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Guard page
+      const user = await requireAuth();
+      if (!user) return;
+
+      renderHeader(user);
+      initMarqueeTicker();
+
+      // State variables
+      let profile = {};
+      let isEditingLinks = false;
+
+      const LOCATIONS = ["Remote", "Bangalore", "Hyderabad", "Pune", "Chennai", "Delhi", "Mumbai", "International"];
+      const ALL_TAGS = [
+        "Design", "SWE", "ML", "Research", "Frontend", "Backend", "Payments", "AI",
+        "Art", "UX", "Figma", "Hardware", "EV", "Engineering", "OSS", "Mentorship",
+        "Pitch", "Entrepreneurship", "Founders", "Postgrad", "Finance", "Leadership",
+        "HighSchool", "STEM", "Travel", "Safety",
+      ];
+      const SKILL_DICTIONARY = [
+        "JavaScript", "TypeScript", "Python", "Java", "C++", "Go", "Rust", "Swift",
+        "Kotlin", "React", "Vue", "Angular", "Next.js", "Node.js", "Django", "Flask",
+        "FastAPI", "SQL", "PostgreSQL", "MongoDB", "Firebase", "Supabase", "GraphQL",
+        "REST", "AWS", "GCP", "Azure", "Docker", "Kubernetes", "CI/CD", "Git", "Linux",
+        "Machine Learning", "Deep Learning", "AI", "TensorFlow", "PyTorch", "NLP",
+        "Computer Vision", "Data Science", "Figma", "Sketch", "Adobe XD", "Photoshop",
+        "Illustrator", "UI", "UX", "Product Design", "Branding", "Typography", "Motion",
+        "After Effects", "Webflow", "Marketing", "SEO", "Content", "Copywriting",
+        "Strategy", "Finance", "Accounting", "Consulting", "Sales", "Operations",
+        "Product Management", "Analytics", "Excel", "Research", "Biology", "Chemistry",
+        "Physics", "Mathematics", "Statistics", "Economics", "Writing", "Video",
+        "Photography", "Music", "Illustration", "Hackathon", "Open Source", "Startup",
+        "Entrepreneurship", "Leadership", "Public Speaking"
+      ];
+
+      // Load master lists and profile data
+      let masterSkills = [];
+      let masterInterests = [];
+      try {
+        masterSkills = await fetchMasterList("skills");
+        masterInterests = await fetchMasterList("interests");
+      } catch (err) {
+        console.error("Failed to load master lists:", err);
+      }
+
+      async function loadProfileData() {
+        try {
+          const res = await fetch("/api/user/profile");
+          if (!res.ok) throw new Error("Failed to load profile details");
+          const data = await res.json();
+          profile = data.profile || {};
+          
+          // Populate Stats
+          document.getElementById("stat-match").textContent = data.interested ? data.interested.length : 0;
+          document.getElementById("stat-applied").textContent = data.applied ? data.applied.length : 0;
+
+          // Fetch saved opportunities to count active ones (deadline >= now)
+          const savedIds = data.saved || [];
+          let activeSavedCount = 0;
+          if (savedIds.length > 0) {
+            const savedRes = await fetch("/api/opportunities/by-ids", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: savedIds })
+            });
+            if (savedRes.ok) {
+              const savedOpps = await savedRes.json();
+              activeSavedCount = savedOpps.filter(opp => new Date(opp.deadline).getTime() >= Date.now()).length;
+            }
+          }
+          document.getElementById("stat-saved").textContent = activeSavedCount;
+
+          // Populate inputs
+          document.getElementById("name-input").value = profile.name || "";
+          document.getElementById("profile-display-name").textContent = profile.name || "Student";
+          document.getElementById("future-you-input").value = profile.future_you || "";
+          document.getElementById("goal-input").value = profile.goal || "";
+
+          // Populate Avatar
+          const avatarContent = document.getElementById("profile-avatar-content");
+          const initials = (profile.name || "S").substring(0, 2).toUpperCase();
+          if (profile.avatar) {
+            if (profile.avatar.startsWith("http") || profile.avatar.startsWith("/") || profile.avatar.startsWith("data:")) {
+              avatarContent.innerHTML = `<img src="${profile.avatar}" alt="avatar" class="w-full h-full object-cover rounded-full" />`;
+            } else {
+              avatarContent.innerHTML = `<span class="text-3xl">${profile.avatar}</span>`;
+            }
+          } else {
+            avatarContent.textContent = initials;
+          }
+
+          // Populate locations, interests, skills
+          renderLocations();
+          renderInterests();
+          renderSkills();
+          renderLinks();
+
+          if (window.lucide) window.lucide.createIcons();
+        } catch (err) {
+          console.error("Failed loading user profile:", err);
+        }
+      }
+
+      // Update Profile Helper
+      async function updateProfile(updates) {
+        try {
+          const res = await fetch("/api/user/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates)
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to update profile");
+          }
+          // Merge updates locally
+          Object.assign(profile, updates);
+          
+          // Re-render avatar if name changes
+          if (updates.name !== undefined) {
+            document.getElementById("profile-display-name").textContent = profile.name || "Student";
+            const avatarContent = document.getElementById("profile-avatar-content");
+            const initials = (profile.name || "S").substring(0, 2).toUpperCase();
+            if (!profile.avatar) {
+              avatarContent.textContent = initials;
+            }
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      // Render locations
+      function renderLocations() {
+        const container = document.getElementById("locations-container");
+        const currentLocs = profile.preferred_locations || [];
+        container.innerHTML = LOCATIONS.map(loc => {
+          const active = currentLocs.includes(loc);
+          return `
+            <button
+              type="button"
+              data-loc="${loc}"
+              class="px-3 py-1.5 border-2 border-foreground rounded-full font-mono text-[10px] font-bold uppercase tracking-tight transition-all location-btn ${
+                active ? "bg-primary text-primary-foreground shadow-stamp -translate-x-0.5 -translate-y-0.5" : "bg-card hover:bg-accent"
+              }"
+            >
+              ${loc}
+            </button>
+          `;
+        }).join("");
+      }
+
+      // Render interests
+      function renderInterests() {
+        const container = document.getElementById("interests-container");
+        const userInterests = profile.interests || [];
+        const allInterests = Array.from(new Set([...ALL_TAGS, ...masterInterests, ...userInterests]));
+        container.innerHTML = allInterests.map(t => {
+          const active = userInterests.includes(t);
+          return `
+            <button
+              type="button"
+              data-interest="${t}"
+              class="px-3 py-1.5 border-2 border-foreground rounded-full font-mono text-[10px] font-bold uppercase tracking-tight transition-all interest-btn ${
+                active ? "bg-secondary text-secondary-foreground shadow-stamp -translate-x-0.5 -translate-y-0.5" : "bg-card hover:bg-accent"
+              }"
+            >
+              #${t}
+            </button>
+          `;
+        }).join("");
+      }
+
+      // Render skills
+      function renderSkills() {
+        const container = document.getElementById("skills-container");
+        const userSkills = profile.skills || [];
+        const allSkills = Array.from(new Set([...SKILL_DICTIONARY, ...masterSkills, ...userSkills]));
+        container.innerHTML = allSkills.map(t => {
+          const active = userSkills.includes(t);
+          return `
+            <button
+              type="button"
+              data-skill="${t}"
+              class="px-3 py-1.5 border-2 border-foreground rounded-full font-mono text-[10px] font-bold uppercase tracking-tight transition-all skill-btn ${
+                active ? "bg-foreground text-background shadow-stamp -translate-x-0.5 -translate-y-0.5" : "bg-card hover:bg-accent"
+              }"
+            >
+              ${t}
+            </button>
+          `;
+        }).join("");
+      }
+
+      // Render links card
+      function renderLinks() {
+        const container = document.getElementById("links-container");
+        const toggleBtn = document.getElementById("toggle-edit-links-btn");
+
+        const email = profile.email || "";
+        const portfolio = profile.portfolio_url || "";
+        const github = profile.github_url || "";
+        const leetcode = profile.leetcode_url || "";
+
+        if (!isEditingLinks) {
+          toggleBtn.textContent = "EDIT";
+          container.innerHTML = `
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">Email</label>
+              ${email ? `<a href="mailto:${email}" class="block w-full bg-background/50 border-2 border-transparent rounded-lg px-3 py-2 font-mono text-xs text-primary hover:underline truncate">${email}</a>` : `<input readonly value="" placeholder="you@example.com" class="w-full bg-background border-2 border-transparent bg-background/50 text-foreground/70 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />`}
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">Portfolio</label>
+              ${portfolio ? `<a href="${portfolio}" target="_blank" rel="noreferrer" class="block w-full bg-background/50 border-2 border-transparent rounded-lg px-3 py-2 font-mono text-xs text-primary hover:underline truncate">${portfolio}</a>` : `<input readonly value="" placeholder="https://..." class="w-full bg-background border-2 border-transparent bg-background/50 text-foreground/70 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />`}
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">GitHub</label>
+              ${github ? `<a href="${github}" target="_blank" rel="noreferrer" class="block w-full bg-background/50 border-2 border-transparent rounded-lg px-3 py-2 font-mono text-xs text-primary hover:underline truncate">${github}</a>` : `<input readonly value="" placeholder="https://github.com/..." class="w-full bg-background border-2 border-transparent bg-background/50 text-foreground/70 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />`}
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">LeetCode</label>
+              ${leetcode ? `<a href="${leetcode}" target="_blank" rel="noreferrer" class="block w-full bg-background/50 border-2 border-transparent rounded-lg px-3 py-2 font-mono text-xs text-primary hover:underline truncate">${leetcode}</a>` : `<input readonly value="" placeholder="https://leetcode.com/..." class="w-full bg-background border-2 border-transparent bg-background/50 text-foreground/70 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />`}
+            </div>
+          `;
+        } else {
+          toggleBtn.textContent = "CANCEL";
+          container.innerHTML = `
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">Email</label>
+              <input id="email-input" type="email" value="${email}" placeholder="you@example.com" class="w-full bg-background border-2 border-foreground/30 focus:border-foreground rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">Portfolio</label>
+              <input id="portfolio-input" type="text" value="${portfolio}" placeholder="https://..." class="w-full bg-background border-2 border-foreground/30 focus:border-foreground rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">GitHub</label>
+              <input id="github-input" type="text" value="${github}" placeholder="https://github.com/..." class="w-full bg-background border-2 border-foreground/30 focus:border-foreground rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold uppercase block mb-1">LeetCode</label>
+              <input id="leetcode-input" type="text" value="${leetcode}" placeholder="https://leetcode.com/..." class="w-full bg-background border-2 border-foreground/30 focus:border-foreground rounded-lg px-3 py-2 font-mono text-xs focus:outline-none" />
+            </div>
+            <button id="save-links-btn" class="w-full py-2.5 bg-foreground text-background rounded-lg font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+              Save Links
+            </button>
+          `;
+
+          document.getElementById("save-links-btn").addEventListener("click", () => {
+            const mail = document.getElementById("email-input").value.trim();
+            const port = document.getElementById("portfolio-input").value.trim();
+            const git = document.getElementById("github-input").value.trim();
+            const leet = document.getElementById("leetcode-input").value.trim();
+
+            const isValidUrl = (s) => !s || s.startsWith('http://') || s.startsWith('https://');
+            if (!isValidUrl(port) || !isValidUrl(git) || !isValidUrl(leet)) {
+              alert("URLs must start with http:// or https://");
+              return;
+            }
+
+            updateProfile({ email: mail, portfolio_url: port, github_url: git, leetcode_url: leet }).then(() => {
+              isEditingLinks = false;
+              renderLinks();
+            });
+          });
+        }
+      }
+
+      // Event listeners for fields (Blur / autosave)
+      document.getElementById("save-name-btn").addEventListener("click", () => {
+        const val = document.getElementById("name-input").value.trim();
+        updateProfile({ name: val || "Student" });
+      });
+      document.getElementById("name-input").addEventListener("blur", () => {
+        const val = document.getElementById("name-input").value.trim();
+        updateProfile({ name: val || "Student" });
+      });
+
+      document.getElementById("future-you-input").addEventListener("blur", () => {
+        const val = document.getElementById("future-you-input").value.trim();
+        updateProfile({ future_you: val });
+      });
+
+      document.getElementById("goal-input").addEventListener("blur", () => {
+        const val = document.getElementById("goal-input").value.trim();
+        updateProfile({ goal: val });
+      });
+
+      // Edit Links Toggle
+      document.getElementById("toggle-edit-links-btn").addEventListener("click", () => {
+        isEditingLinks = !isEditingLinks;
+        renderLinks();
+      });
+
+      // Toggling locations click handler
+      document.getElementById("locations-container").addEventListener("click", (e) => {
+        const btn = e.target.closest(".location-btn");
+        if (!btn) return;
+        const loc = btn.getAttribute("data-loc");
+        const current = profile.preferred_locations || [];
+        const next = current.includes(loc) ? current.filter(x => x !== loc) : [...current, loc];
+        
+        // Optimistic UI
+        profile.preferred_locations = next;
+        renderLocations();
+        
+        updateProfile({ preferred_locations: next });
+      });
+
+      // Toggling interests click handler
+      document.getElementById("interests-container").addEventListener("click", (e) => {
+        const btn = e.target.closest(".interest-btn");
+        if (!btn) return;
+        const interest = btn.getAttribute("data-interest");
+        const current = profile.interests || [];
+        const next = current.includes(interest) ? current.filter(x => x !== interest) : [...current, interest];
+        
+        // Optimistic UI
+        profile.interests = next;
+        renderInterests();
+
+        updateProfile({ interests: next });
+      });
+
+      // Custom interest prompt
+      document.getElementById("add-interest-btn").addEventListener("click", async () => {
+        const val = prompt("Add a custom interest:");
+        if (!val || !val.trim()) return;
+        const cleanVal = val.trim();
+        
+        try {
+          await fetch("/api/master/interests", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: cleanVal })
+          });
+          masterInterests.push(cleanVal);
+          
+          const current = profile.interests || [];
+          if (!current.includes(cleanVal)) {
+            const next = [...current, cleanVal];
+            profile.interests = next;
+            updateProfile({ interests: next }).then(renderInterests);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
+
+      // Toggling skills click handler
+      document.getElementById("skills-container").addEventListener("click", (e) => {
+        const btn = e.target.closest(".skill-btn");
+        if (!btn) return;
+        const skill = btn.getAttribute("data-skill");
+        const current = profile.skills || [];
+        const next = current.includes(skill) ? current.filter(x => x !== skill) : [...current, skill];
+        
+        // Optimistic UI
+        profile.skills = next;
+        renderSkills();
+
+        updateProfile({ skills: next });
+      });
+
+      // Custom skill prompt
+      document.getElementById("add-skill-btn").addEventListener("click", async () => {
+        const val = prompt("Add a custom skill:");
+        if (!val || !val.trim()) return;
+        const cleanVal = val.trim();
+
+        try {
+          await fetch("/api/master/skills", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: cleanVal })
+          });
+          masterSkills.push(cleanVal);
+
+          const current = profile.skills || [];
+          if (!current.includes(cleanVal)) {
+            const next = [...current, cleanVal];
+            profile.skills = next;
+            updateProfile({ skills: next }).then(renderSkills);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
+
+      // AI Resume Analyzer PDF upload
+      document.getElementById("resume-file-input").addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const errorDiv = document.getElementById("resume-error");
+        errorDiv.classList.add("hidden");
+        errorDiv.textContent = "";
+
+        if (file.type !== "application/pdf") {
+          errorDiv.textContent = "Please upload a PDF file.";
+          errorDiv.classList.remove("hidden");
+          return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          errorDiv.textContent = "File size must be under 10MB.";
+          errorDiv.classList.remove("hidden");
+          return;
+        }
+
+        const statusDiv = document.getElementById("resume-upload-status");
+        statusDiv.innerHTML = `
+          <i data-lucide="loader" class="size-6 animate-spin text-primary"></i>
+          <span class="font-mono text-xs uppercase tracking-widest font-bold">Analyzing...</span>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            try {
+              const base64String = event.target.result.split(",")[1];
+              if (!base64String) throw new Error("Failed to read file.");
+
+              const res = await fetch("/api/gemini/analyze-resume", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base64Pdf: base64String })
+              });
+
+              if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to analyze resume.");
+              }
+
+              const data = await res.json();
+
+              // Merge parsed data into local profile state
+              const newSkills = Array.from(new Set([
+                ...(profile.skills || []),
+                ...(data.skills || []),
+                ...(data.programmingLanguages || []),
+                ...(data.frameworks || []),
+                ...(data.tools || []),
+                ...(data.technologies || []),
+              ]));
+
+              const newInterests = Array.from(new Set([
+                ...(profile.interests || []),
+                ...(data.interests || []),
+                ...(data.domains || []),
+              ]));
+
+              const field = data.preferredRoles?.[0] || profile.field;
+
+              await updateProfile({
+                skills: newSkills,
+                interests: newInterests,
+                field: field
+              });
+
+              await loadProfileData();
+            } catch (err) {
+              console.error(err);
+              errorDiv.textContent = err.message || "Failed to analyze resume.";
+              errorDiv.classList.remove("hidden");
+            } finally {
+              statusDiv.innerHTML = `
+                <i data-lucide="upload" class="size-6 text-foreground/60"></i>
+                <span class="font-mono text-xs uppercase tracking-widest font-bold">Select PDF (Max 10MB)</span>
+              `;
+              if (window.lucide) window.lucide.createIcons();
+            }
+          };
+          reader.readAsDataURL(file);
+        } catch (err) {
+          console.error(err);
+          errorDiv.textContent = "Failed to process file.";
+          errorDiv.classList.remove("hidden");
+          statusDiv.innerHTML = `
+            <i data-lucide="upload" class="size-6 text-foreground/60"></i>
+            <span class="font-mono text-xs uppercase tracking-widest font-bold">Select PDF (Max 10MB)</span>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      // AI Generate Personalized Feed
+      const generateFeedBtn = document.getElementById("generate-feed-btn");
+      generateFeedBtn.addEventListener("click", async () => {
+        const errorDiv = document.getElementById("generate-feed-error");
+        errorDiv.classList.add("hidden");
+        errorDiv.textContent = "";
+
+        generateFeedBtn.disabled = true;
+        generateFeedBtn.innerHTML = `
+          <i data-lucide="loader" class="size-4 animate-spin"></i>
+          Generating...
+        `;
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+          const res = await fetch("/api/gemini/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile })
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to generate personalized feed.");
+          }
+          
+          window.location.href = "/";
+        } catch (err) {
+          console.error(err);
+          errorDiv.textContent = err.message || "Failed to generate personalized feed.";
+          errorDiv.classList.remove("hidden");
+          generateFeedBtn.disabled = false;
+          generateFeedBtn.innerHTML = `
+            <i data-lucide="sparkles" class="size-4"></i>
+            Generate My Feed ✨
+          `;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      // Profile Picture Upload Handler
+      const avatarContainer = document.getElementById("profile-avatar-container");
+      const avatarFileInput = document.getElementById("avatar-file-input");
+
+      avatarContainer.addEventListener("click", () => {
+        avatarFileInput.click();
+      });
+
+      avatarFileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Size limit validation (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert("Image file size must be less than 5MB.");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64Data = event.target.result;
+          
+          const avatarContent = document.getElementById("profile-avatar-content");
+          const originalHTML = avatarContent.innerHTML;
+          avatarContent.innerHTML = `<i data-lucide="loader" class="size-6 animate-spin text-foreground"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+
+          try {
+            await updateProfile({ avatar: base64Data });
+            avatarContent.innerHTML = `<img src="${base64Data}" alt="avatar" class="w-full h-full object-cover rounded-full" />`;
+          } catch (err) {
+            console.error("Failed to upload avatar:", err);
+            avatarContent.innerHTML = originalHTML;
+          }
+          if (window.lucide) window.lucide.createIcons();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Initial Load
+      await loadProfileData();
+    });
+  </script>
+</body>
+</html>

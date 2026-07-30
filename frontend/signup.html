@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOP — Join The Loop</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            border: 'var(--border)',
+            lime: 'var(--lime)',
+            amber: 'var(--amber)',
+            indigo: 'var(--indigo)',
+          },
+          fontFamily: {
+            display: ['Anton', 'Impact', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+  <!-- Sticky Ticker Banner -->
+  <div class="sticky top-0 z-50 bg-primary text-primary-foreground py-1.5 overflow-hidden border-b-2 border-foreground">
+    <div id="marquee-ticker" class="marquee-content gap-10 whitespace-nowrap font-mono text-[11px] font-bold uppercase tracking-tight">
+      <span class="inline-flex items-center gap-3">
+        <span>LOOP · Loading opportunities</span>
+        <span class="opacity-50">✦</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-[28px] z-40 bg-background/80 backdrop-blur-md border-b-2 border-foreground/10">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <a href="/" class="font-display text-3xl uppercase tracking-tighter italic leading-none shrink-0">
+        LOOP<span class="text-primary">.</span>
+      </a>
+      <nav id="header-nav" class="flex items-center gap-1">
+        <a href="/login" class="px-4 py-2 rounded-full font-mono text-[11px] font-bold uppercase tracking-tight text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Log In</a>
+        <a href="/signup" class="px-4 py-2 rounded-full font-mono text-[11px] font-bold uppercase tracking-tight bg-foreground text-background active" aria-current="page">Sign Up</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="min-h-[80vh] flex flex-col items-center justify-center px-6">
+    <div class="w-full max-w-md animate-entry">
+      <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-8">
+        Join<br>The Loop.
+      </h1>
+      
+      <div id="error-box" class="hidden mb-4 p-4 border-2 border-destructive bg-destructive/10 text-destructive font-mono text-xs uppercase rounded-xl"></div>
+      
+      <form id="signup-form" class="flex flex-col gap-6">
+        <input 
+          type="text" 
+          id="username" 
+          required 
+          placeholder="CHOOSE A USERNAME" 
+          class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
+        />
+        <input 
+          type="password" 
+          id="password" 
+          required 
+          placeholder="CREATE PASSWORD" 
+          class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
+        />
+        <button 
+          type="submit" 
+          id="submit-btn"
+          class="mt-4 inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
+        >
+          Sign Up <i data-lucide="arrow-right" class="size-4"></i>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-foreground/10 mt-24 py-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
+      <div>
+        <div class="font-display text-3xl uppercase tracking-tighter italic">LOOP.</div>
+        <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mt-2">v.03 — built for the curious</p>
+      </div>
+      <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        © 2026 · No more missed deadlines.
+      </div>
+    </div>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Check auth state
+      const user = await getAuthUser();
+      if (user) {
+        window.location.href = "/";
+        return;
+      }
+
+      initMarqueeTicker();
+
+      const form = document.getElementById("signup-form");
+      const errorBox = document.getElementById("error-box");
+      const submitBtn = document.getElementById("submit-btn");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorBox.classList.add("hidden");
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = "Creating account...";
+
+        const name = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        try {
+          const res = await fetch("/api/auth/authenticate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, password })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            // New users go to profile setup onboarding!
+            window.location.href = "/profile";
+          } else {
+            throw new Error(data.error || "Failed to create account");
+          }
+        } catch (err) {
+          errorBox.innerText = err.message;
+          errorBox.classList.remove("hidden");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `Sign Up <i data-lucide="arrow-right" class="size-4"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

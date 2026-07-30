@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --background: oklch(0.985 0.012 95);
+  --foreground: oklch(0.15 0.01 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.01 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.01 60);
+  --primary: oklch(0.65 0.24 35);
+  --primary-foreground: oklch(0.985 0.012 95);
+  --secondary: oklch(0.6 0.22 295);
+  --secondary-foreground: oklch(0.985 0.012 95);
+  --muted: oklch(0.94 0.012 80);
+  --muted-foreground: oklch(0.45 0.02 60);
+  --accent: oklch(0.92 0.04 80);
+  --accent-foreground: oklch(0.15 0.01 60);
+  --destructive: oklch(0.6 0.24 27);
+  --destructive-foreground: oklch(0.985 0.012 95);
+  --border: oklch(0.15 0.01 60 / 12%);
+  --input: oklch(0.15 0.01 60 / 20%);
+  --ring: oklch(0.65 0.24 35);
+
+  --lime: oklch(0.92 0.18 130);
+  --amber: oklch(0.88 0.16 85);
+  --indigo: oklch(0.75 0.14 270);
+}
+
+.dark {
+  --background: oklch(0.15 0.01 60);
+  --foreground: oklch(0.985 0.012 95);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html, body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Animations */
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotate(-1deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+/* Utility Classes */
+.animate-entry {
+  animation: slide-up-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.marquee-content {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.shadow-stamp {
+  box-shadow: 4px 4px 0 0 var(--foreground);
+}
+
+.shadow-stamp-lg {
+  box-shadow: 8px 8px 0 0 var(--foreground);
+}
+
+/* Tinder swipe transitions */
+.swipe-card {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  user-select: none;
+}
+.swipe-card.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

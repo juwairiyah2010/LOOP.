@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOP — Opportunity Details</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            border: 'var(--border)',
+            lime: 'var(--lime)',
+            amber: 'var(--amber)',
+            indigo: 'var(--indigo)',
+          },
+          fontFamily: {
+            display: ['Anton', 'Impact', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+  <!-- Sticky Ticker Banner -->
+  <div class="sticky top-0 z-50 bg-primary text-primary-foreground py-1.5 overflow-hidden border-b-2 border-foreground">
+    <div id="marquee-ticker" class="marquee-content gap-10 whitespace-nowrap font-mono text-[11px] font-bold uppercase tracking-tight">
+      <span class="inline-flex items-center gap-3">
+        <span>LOOP · Loading opportunities</span>
+        <span class="opacity-50">✦</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-[28px] z-40 bg-background/80 backdrop-blur-md border-b-2 border-foreground/10">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <a href="/" class="font-display text-3xl uppercase tracking-tighter italic leading-none shrink-0">
+        LOOP<span class="text-primary">.</span>
+      </a>
+      <nav id="header-nav" class="flex items-center gap-1"></nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-6 py-10 lg:py-14 animate-entry">
+    
+    <a href="/" class="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground mb-8">
+      <i data-lucide="arrow-left" class="size-3.5"></i> Back to feed
+    </a>
+
+    <div id="detail-card" class="bg-card border-2 border-foreground rounded-3xl p-6 md:p-10 shadow-stamp-lg flex flex-col gap-6 md:gap-8">
+      <div class="text-center font-mono text-xs uppercase text-muted-foreground py-10">Loading opportunity details...</div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-foreground/10 mt-24 py-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
+      <div>
+        <div class="font-display text-3xl uppercase tracking-tighter italic">LOOP.</div>
+        <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mt-2">v.03 — built for the curious</p>
+      </div>
+      <div class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        © 2026 · No more missed deadlines.
+      </div>
+    </div>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Guard page
+      const user = await requireAuth();
+      if (!user) return;
+
+      renderHeader(user);
+      initMarqueeTicker();
+
+      const oppId = window.location.pathname.split("/").pop();
+      const detailCard = document.getElementById("detail-card");
+
+      const categoryColors = {
+        internship: "bg-primary text-primary-foreground",
+        scholarship: "bg-secondary text-secondary-foreground",
+        competition: "bg-foreground text-background",
+        fellowship: "bg-indigo-600 text-white",
+        hackathon: "bg-lime text-foreground border border-foreground/10"
+      };
+
+      try {
+        const oppRes = await fetch(`/api/opportunities/${oppId}`);
+        if (!oppRes.ok) {
+          throw new Error("Opportunity not found");
+        }
+        const opp = await oppRes.json();
+
+        const profileRes = await fetch("/api/user/profile");
+        if (!profileRes.ok) return;
+        const profileData = await profileRes.json();
+
+        const score = getMatchScore(profileData.profile, opp.tags || []);
+        const daysLeft = formatDeadline(opp.deadline);
+        const colorClass = categoryColors[opp.category] || "bg-foreground text-background";
+        const isSaved = profileData.saved.includes(opp.id);
+        const isApplied = profileData.applied.includes(opp.id);
+
+        detailCard.innerHTML = `
+          <!-- Header info -->
+          <div class="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-foreground/10 pb-6">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-3 flex-wrap">
+                <span class="px-2.5 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase tracking-tight ${colorClass}">
+                  ${opp.category}
+                </span>
+                <span class="px-2.5 py-0.5 bg-muted rounded-full font-mono text-[9px] text-muted-foreground uppercase">
+                  ${opp.location}
+                </span>
+                ${opp.work_mode ? `
+                  <span class="px-2.5 py-0.5 bg-muted rounded-full font-mono text-[9px] text-muted-foreground uppercase">
+                    ${opp.work_mode}
+                  </span>
+                ` : ""}
+              </div>
+              <h1 class="font-display text-4xl md:text-5xl uppercase tracking-tight leading-[0.95]">${opp.title}</h1>
+              <div class="font-mono text-xs uppercase text-muted-foreground mt-2">${opp.organization}</div>
+            </div>
+
+            <div class="flex flex-col md:items-end gap-1 shrink-0 bg-primary/5 p-4 border-2 border-primary/20 rounded-2xl">
+              <span class="font-mono text-[10px] text-primary font-bold uppercase">TAILORED MATCH</span>
+              <span class="font-display text-4xl text-primary leading-none">${score}%</span>
+            </div>
+          </div>
+
+          <!-- Attributes Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-muted/40 p-4 border-2 border-foreground/10 rounded-2xl">
+            <div>
+              <div class="font-mono text-[9px] text-muted-foreground uppercase">DAYS REMAINING</div>
+              <div class="font-bold text-sm uppercase mt-0.5">${daysLeft}</div>
+            </div>
+            <div>
+              <div class="font-mono text-[9px] text-muted-foreground uppercase">PRIZE / REWARD</div>
+              <div class="font-bold text-sm uppercase mt-0.5">${opp.prize_amount || "N/A"}</div>
+            </div>
+            <div>
+              <div class="font-mono text-[9px] text-muted-foreground uppercase">EST. PARTICIPANTS</div>
+              <div class="font-bold text-sm uppercase mt-0.5">${opp.participants || "N/A"}</div>
+            </div>
+            <div>
+              <div class="font-mono text-[9px] text-muted-foreground uppercase">VERIFIED STATUS</div>
+              <div class="font-bold text-sm uppercase mt-0.5 flex items-center gap-1 text-primary">
+                <i data-lucide="check-circle-2" class="size-4 shrink-0"></i> Verified
+              </div>
+            </div>
+          </div>
+
+          <!-- Description content -->
+          <div class="space-y-4">
+            <h3 class="font-display text-2xl uppercase tracking-tight">Program Description</h3>
+            <p class="font-sans text-sm leading-relaxed text-foreground/80">${opp.description}</p>
+          </div>
+
+          <!-- Tags list -->
+          <div class="space-y-2 border-t border-foreground/10 pt-6">
+            <div class="font-mono text-[9px] text-muted-foreground uppercase">TAGS & PREFERENCES</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${(opp.tags || []).map(t => `
+                <span class="px-2.5 py-1 bg-muted rounded-full font-mono text-[10px] uppercase">${t}</span>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- CTA Buttons section -->
+          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-foreground/10 pt-6 mt-4">
+            <div class="flex gap-2 w-full md:w-auto">
+              <button 
+                id="bookmark-btn"
+                class="flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${isSaved ? 'bg-foreground text-background' : 'hover:bg-foreground/5'}"
+              >
+                <i data-lucide="bookmark" class="size-4"></i> ${isSaved ? "Saved" : "Save Opportunity"}
+              </button>
+              
+              <button 
+                id="applied-btn"
+                class="flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${isApplied ? 'bg-primary border-primary text-primary-foreground' : 'hover:bg-foreground/5'}"
+              >
+                <i data-lucide="check-square" class="size-4"></i> ${isApplied ? "Applied" : "Mark Applied"}
+              </button>
+            </div>
+
+            ${opp.apply_url ? `
+              <a 
+                href="${opp.apply_url}" 
+                target="_blank" 
+                class="w-full md:w-auto px-8 py-4 bg-foreground text-background border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:border-primary transition-all text-center flex items-center justify-center gap-2"
+              >
+                Apply Externally <i data-lucide="external-link" class="size-4"></i>
+              </a>
+            ` : ""}
+          </div>
+        `;
+
+        if (window.lucide) window.lucide.createIcons();
+
+        // Event listener for Bookmark/Save button
+        document.getElementById("bookmark-btn").addEventListener("click", async () => {
+          const btn = document.getElementById("bookmark-btn");
+          const res = await fetch("/api/user/saved/toggle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: opp.id })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.saved) {
+              btn.className = "flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 bg-foreground text-background";
+              btn.innerHTML = `<i data-lucide="bookmark" class="size-4"></i> Saved`;
+            } else {
+              btn.className = "flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 hover:bg-foreground/5";
+              btn.innerHTML = `<i data-lucide="bookmark" class="size-4"></i> Save Opportunity`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+          }
+        });
+
+        // Event listener for Mark Applied button
+        document.getElementById("applied-btn").addEventListener("click", async () => {
+          const btn = document.getElementById("applied-btn");
+          const res = await fetch("/api/user/applied/toggle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: opp.id })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.applied) {
+              btn.className = "flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 bg-primary border-primary text-primary-foreground";
+              btn.innerHTML = `<i data-lucide="check-square" class="size-4"></i> Applied`;
+            } else {
+              btn.className = "flex-1 md:flex-none px-6 py-3.5 border-2 border-foreground rounded-xl font-mono text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 hover:bg-foreground/5";
+              btn.innerHTML = `<i data-lucide="check-square" class="size-4"></i> Mark Applied`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+          }
+        });
+
+      } catch (err) {
+        detailCard.innerHTML = `<div class="text-center font-mono text-xs uppercase text-destructive py-10">Error loading details: ${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
