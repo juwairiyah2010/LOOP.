@@ -137,6 +137,7 @@ app.post("/api/auth/authenticate", async (req, res) => {
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     });
@@ -150,7 +151,11 @@ app.post("/api/auth/authenticate", async (req, res) => {
 
 // Logout
 app.post("/api/auth/logout", (req, res) => {
-  res.clearCookie("auth_token", { path: "/" });
+  res.clearCookie("auth_token", {
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+  });
   return res.json({ success: true });
 });
 
