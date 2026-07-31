@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — LOOP</title>
   <link rel="stylesheet" href="/styles.css">
@@ -341,17 +343,25 @@
           document.getElementById("future-you-input").value = profile.future_you || "";
           document.getElementById("goal-input").value = profile.goal || "";
 
-          // Populate Avatar
+          // Populate Avatar — show initials immediately, lazy-load photo
           const avatarContent = document.getElementById("profile-avatar-content");
           const initials = (profile.name || "S").substring(0, 2).toUpperCase();
-          if (profile.avatar) {
-            if (profile.avatar.startsWith("http") || profile.avatar.startsWith("/") || profile.avatar.startsWith("data:")) {
-              avatarContent.innerHTML = `<img src="${profile.avatar}" alt="avatar" class="w-full h-full object-cover rounded-full" />`;
-            } else {
-              avatarContent.innerHTML = `<span class="text-3xl">${profile.avatar}</span>`;
-            }
-          } else {
-            avatarContent.textContent = initials;
+          avatarContent.textContent = initials; // instant render
+
+          if (profile.has_avatar) {
+            fetch("/api/user/avatar")
+              .then(r => r.ok ? r.json() : null)
+              .then(data => {
+                if (!data?.avatar) return;
+                const av = data.avatar;
+                profile.avatar = av; // cache locally for upload handler
+                if (av.startsWith("http") || av.startsWith("/") || av.startsWith("data:")) {
+                  avatarContent.innerHTML = `<img src="${av}" alt="avatar" class="w-full h-full object-cover rounded-full" style="display:block" />`;
+                } else {
+                  avatarContent.innerHTML = `<span class="text-3xl">${av}</span>`;
+                }
+              })
+              .catch(() => {});
           }
 
           // Populate locations, interests, skills

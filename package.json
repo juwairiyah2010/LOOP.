@@ -2,7 +2,9 @@
   "name": "loop_opportunities_js",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node --watch backend/server/app.js",
     "start": "node backend/server/app.js",
@@ -12,6 +14,7 @@
   "dependencies": {
     "@google/genai": "^2.11.0",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

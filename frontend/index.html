@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LOOP — Your Opportunity Feed</title>
   <link rel="stylesheet" href="/styles.css">
@@ -300,31 +302,40 @@
       // Load Profile & Feed data
       async function initializeFeed() {
         try {
-          // Fetch Profile details
-          const profileRes = await fetch("/api/user/profile");
+          // Fetch profile and feed in parallel for speed
+          const [profileRes] = await Promise.all([
+            fetch("/api/user/profile"),
+          ]);
           if (!profileRes.ok) return;
           profileData = await profileRes.json();
 
-          // Render Profile stats & sidebar details
+          // Render profile sidebar immediately (no waiting for avatar)
           document.getElementById("user-greeting").innerText = (profileData.profile.name || "Student").split(" ")[0];
           document.getElementById("profile-name").innerText = profileData.profile.name || "Student";
           document.getElementById("profile-future").innerText = profileData.profile.future_you || "Dream your future...";
-          
+
+          // Show initials first (instant), then load avatar lazily in background
           const avatarDiv = document.getElementById("profile-avatar");
-          avatarDiv.innerHTML = "";
-          const av = profileData.profile.avatar;
-          if (av && (av.startsWith("http") || av.startsWith("/") || av.startsWith("data:"))) {
-            // Real uploaded image — remove flex centering so img fills the circle
-            avatarDiv.className = "size-12 rounded-full overflow-hidden shrink-0 bg-primary";
-            avatarDiv.innerHTML = `<img src="${av}" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:9999px" />`;
-          } else if (av) {
-            // Emoji avatar
-            avatarDiv.className = "size-12 rounded-full bg-primary flex items-center justify-center font-display text-xl text-primary-foreground overflow-hidden shrink-0";
-            avatarDiv.innerHTML = `<span class="text-2xl">${av}</span>`;
-          } else {
-            // Initials fallback
-            avatarDiv.className = "size-12 rounded-full bg-primary flex items-center justify-center font-display text-xl text-primary-foreground overflow-hidden shrink-0";
-            avatarDiv.innerText = (profileData.profile.name || "ST").slice(0,2).toUpperCase();
+          const name = profileData.profile.name || "ST";
+          avatarDiv.className = "size-12 rounded-full bg-primary flex items-center justify-center font-display text-xl text-primary-foreground overflow-hidden shrink-0";
+          avatarDiv.innerText = name.slice(0,2).toUpperCase();
+
+          // Lazy-load avatar only if user has one (non-blocking)
+          if (profileData.profile.has_avatar) {
+            fetch("/api/user/avatar")
+              .then(r => r.ok ? r.json() : null)
+              .then(data => {
+                if (!data?.avatar) return;
+                const av = data.avatar;
+                avatarDiv.innerHTML = "";
+                if (av.startsWith("http") || av.startsWith("/") || av.startsWith("data:")) {
+                  avatarDiv.className = "size-12 rounded-full overflow-hidden shrink-0 bg-primary";
+                  avatarDiv.innerHTML = `<img src="${av}" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:9999px" />`;
+                } else {
+                  avatarDiv.innerHTML = `<span class="text-2xl">${av}</span>`;
+                }
+              })
+              .catch(() => {}); // silently fail — initials already showing
           }
 
           const skillsContainer = document.getElementById("profile-skills-tags");
@@ -337,9 +348,8 @@
             skillsContainer.innerHTML = `<span class="text-[10px] opacity-50 font-mono">ADD SOME SKILLS</span>`;
           }
 
-          // Fetch matching opportunities
-          await loadFeedOpportunities(true);
-          await loadWatchlistWidget();
+          // Fetch feed and watchlist in parallel
+          await Promise.all([loadFeedOpportunities(true), loadWatchlistWidget()]);
 
         } catch (err) {
           console.error("Failed to initialize feed:", err);

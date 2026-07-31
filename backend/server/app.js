@@ -3,6 +3,7 @@ dotenv.config({ override: true });
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
@@ -34,6 +35,9 @@ function toObjectId(id) {
 
 const app = express();
 
+// ── Performance: gzip all responses ──────────────────────────────────────────
+app.use(compression());
+
 app.use(cors({
   origin: true,
   credentials: true
@@ -41,6 +45,20 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
+
+// ── Performance: cache static assets ─────────────────────────────────────────
+// HTML pages: 10-minute cache (revalidate on stale)
+// JS/CSS/images: 1-hour cache
+const frontendPath = path.join(__dirname, "../../frontend");
+app.use(express.static(frontendPath, {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith(".html")) {
+      res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=60");
+    } else {
+      res.setHeader("Cache-Control", "public, max-age=3600, immutable");
+    }
+  }
+}));
 
 // Authentication Middleware
 function requireAuth(req, res, next) {
@@ -171,27 +189,52 @@ async function getDbUser(userIdStr) {
   return { users, dbUser };
 }
 
-// Fetch complete user profile data
+// Fetch user profile (avatar excluded — fetch separately from /api/user/avatar)
 app.get("/api/user/profile", requireAuth, async (req, res) => {
   try {
     const { dbUser } = await getDbUser(req.user.userId);
-    const DEFAULT_PROFILE = {
-      name: "",
-      avatar: "",
-      field: "",
-      interests: [],
-      skills: [],
-      categories: [],
-      preferred_locations: [],
-      future_you: ""
+    const p = dbUser.profile || {};
+    const profile = {
+      name: p.name || "",
+      field: p.field || "",
+      interests: p.interests || [],
+      skills: p.skills || [],
+      categories: p.categories || [],
+      preferred_locations: p.preferred_locations || [],
+      future_you: p.future_you || "",
+      bio: p.bio || "",
+      university: p.university || "",
+      year_of_study: p.year_of_study || "",
+      goal: p.goal || "",
+      email: p.email || "",
+      portfolio_url: p.portfolio_url || "",
+      github_url: p.github_url || "",
+      leetcode_url: p.leetcode_url || "",
+      // Return a boolean flag instead of the full base64 blob
+      has_avatar: !!(p.avatar && p.avatar.length > 10),
     };
+    // Short cache: 30s for profile data
+    res.setHeader("Cache-Control", "private, max-age=30");
     return res.json({
-      profile: { ...DEFAULT_PROFILE, ...(dbUser.profile || {}) },
+      profile,
       saved: dbUser.saved || [],
       interested: dbUser.interested || [],
       passed: dbUser.passed || [],
       applied: dbUser.applied || []
     });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Fetch avatar separately (heavy base64 blob — only loaded when needed)
+app.get("/api/user/avatar", requireAuth, async (req, res) => {
+  try {
+    const { dbUser } = await getDbUser(req.user.userId);
+    const avatar = dbUser.profile?.avatar || "";
+    // Cache avatar for 5 minutes — it rarely changes
+    res.setHeader("Cache-Control", "private, max-age=300");
+    return res.json({ avatar });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -573,9 +616,8 @@ app.post("/api/master/interests", async (req, res) => {
 // ----------------------------------------------------------------------
 // STATIC FRONTEND ASSETS AND ROUTING
 // ----------------------------------------------------------------------
-
-// Serve static assets from frontend directory
-app.use(express.static(path.join(__dirname, "../../frontend")));
+// Note: express.static with cache headers is already set above.
+// Route handlers below ensure SPA-style routing works correctly.
 
 // Wildcard routing to serve HTML pages directly
 app.get("/signup", (req, res) => {
