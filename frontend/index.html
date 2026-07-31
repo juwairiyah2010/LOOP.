@@ -311,9 +311,15 @@
           document.getElementById("profile-future").innerText = profileData.profile.future_you || "Dream your future...";
           
           const avatarDiv = document.getElementById("profile-avatar");
-          if (profileData.profile.avatar) {
-            avatarDiv.innerHTML = `<span class="text-2xl">${profileData.profile.avatar}</span>`;
+          const av = profileData.profile.avatar;
+          if (av && (av.startsWith("http") || av.startsWith("/") || av.startsWith("data:"))) {
+            // Real uploaded image
+            avatarDiv.innerHTML = `<img src="${av}" alt="avatar" class="w-full h-full object-cover rounded-full" />`;
+          } else if (av) {
+            // Emoji avatar
+            avatarDiv.innerHTML = `<span class="text-2xl">${av}</span>`;
           } else {
+            // Initials fallback
             avatarDiv.innerText = (profileData.profile.name || "ST").slice(0,2).toUpperCase();
           }
 
