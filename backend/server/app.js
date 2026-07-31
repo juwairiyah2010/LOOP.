@@ -232,13 +232,98 @@ app.get("/api/user/avatar", requireAuth, async (req, res) => {
   try {
     const { dbUser } = await getDbUser(req.user.userId);
     const avatar = dbUser.profile?.avatar || "";
-    // Cache avatar for 5 minutes — it rarely changes
     res.setHeader("Cache-Control", "private, max-age=300");
     return res.json({ avatar });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
+
+// ── SINGLE COMBINED INIT ENDPOINT ────────────────────────────────────────────
+// Returns everything needed for the feed page in ONE request / ONE DB connection.
+// This is the key fix for Vercel cold start lag — instead of 4 sequential fetches
+// each paying the cold-start penalty, there is only ONE.
+app.get("/api/feed/init", requireAuth, async (req, res) => {
+  try {
+    const [usersCol, oppsCol] = await Promise.all([
+      getUsersCollection(),
+      getOpportunitiesCollection(),
+    ]);
+
+    // Fetch user in parallel with first page of opportunities
+    const dbUserPromise = usersCol.findOne({ _id: toObjectId(req.user.userId) });
+
+    // First page of opportunities (sorted by deadline)
+    const now = new Date().toISOString();
+    const oppsPromise = oppsCol.aggregate([
+      { $match: { deadline: { $gte: now } } },
+      { $sort: { deadline: 1 } },
+      { $limit: 20 },
+      { $project: {
+        id: 1, _id: 1, title: 1, organization: 1, category: 1,
+        location: 1, deadline: 1, tags: 1, prize_amount: 1,
+        work_mode: 1, verified: 1, featured: 1, description: 1,
+        apply_url: 1, participants: 1, application_start_date: 1, posted_at: 1
+      }}
+    ]).toArray();
+
+    const [dbUser, opps] = await Promise.all([dbUserPromise, oppsPromise]);
+    if (!dbUser) return res.status(404).json({ error: "User not found" });
+
+    const p = dbUser.profile || {};
+    const profile = {
+      name: p.name || "",
+      field: p.field || "",
+      interests: p.interests || [],
+      skills: p.skills || [],
+      categories: p.categories || [],
+      preferred_locations: p.preferred_locations || [],
+      future_you: p.future_you || "",
+      goal: p.goal || "",
+      has_avatar: !!(p.avatar && p.avatar.length > 10),
+    };
+
+    const results = opps.map(doc => ({
+      ...doc,
+      _id: String(doc._id),
+      id: doc.id ? String(doc.id) : String(doc._id),
+    }));
+
+    // Watchlist: upcoming deadlines from saved items
+    const savedIds = dbUser.saved || [];
+    let watchlist = [];
+    if (savedIds.length > 0) {
+      watchlist = await oppsCol.find(
+        { $or: [
+            { id: { $in: savedIds } },
+            { _id: { $in: savedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id)).map(id => toObjectId(id)) } }
+          ],
+          deadline: { $gte: now }
+        },
+        { projection: { title: 1, organization: 1, deadline: 1, id: 1, _id: 1 } }
+      ).sort({ deadline: 1 }).limit(5).toArray();
+      watchlist = watchlist.map(d => ({ ...d, _id: String(d._id), id: d.id ? String(d.id) : String(d._id) }));
+    }
+
+    res.setHeader("Cache-Control", "private, max-age=15");
+    return res.json({
+      profile,
+      saved: dbUser.saved || [],
+      interested: dbUser.interested || [],
+      passed: dbUser.passed || [],
+      applied: dbUser.applied || [],
+      opportunities: results,
+      watchlist,
+    });
+  } catch (error) {
+    console.error("feed/init error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Ping/keepwarm — lets frontend ping on load to pre-warm the function
+app.get("/api/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
+
 
 // Update Profile
 app.post("/api/user/profile", requireAuth, async (req, res) => {

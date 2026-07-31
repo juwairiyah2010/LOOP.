@@ -299,29 +299,34 @@
       let swipeIndex = 0;
       let swipeHistory = [];
 
-      // Load Profile & Feed data
+      // Load Profile & Feed data — single request, one DB round trip
       async function initializeFeed() {
         try {
-          // Fetch profile and feed in parallel for speed
-          const [profileRes] = await Promise.all([
-            fetch("/api/user/profile"),
-          ]);
-          if (!profileRes.ok) return;
-          profileData = await profileRes.json();
+          // ONE request returns everything: profile + opps + watchlist
+          const initRes = await fetch("/api/feed/init");
+          if (!initRes.ok) return;
+          const initData = await initRes.json();
 
-          // Render profile sidebar immediately (no waiting for avatar)
-          document.getElementById("user-greeting").innerText = (profileData.profile.name || "Student").split(" ")[0];
-          document.getElementById("profile-name").innerText = profileData.profile.name || "Student";
-          document.getElementById("profile-future").innerText = profileData.profile.future_you || "Dream your future...";
+          // Populate profileData from combined response
+          profileData = {
+            profile: initData.profile,
+            saved: initData.saved,
+            interested: initData.interested,
+            passed: initData.passed,
+            applied: initData.applied,
+          };
 
-          // Show initials first (instant), then load avatar lazily in background
+          // Render sidebar immediately
+          document.getElementById("user-greeting").innerText = (initData.profile.name || "Student").split(" ")[0];
+          document.getElementById("profile-name").innerText = initData.profile.name || "Student";
+          document.getElementById("profile-future").innerText = initData.profile.future_you || "Dream your future...";
+
+          // Show initials immediately, avatar loads lazily in background
           const avatarDiv = document.getElementById("profile-avatar");
-          const name = profileData.profile.name || "ST";
+          const name = initData.profile.name || "ST";
           avatarDiv.className = "size-12 rounded-full bg-primary flex items-center justify-center font-display text-xl text-primary-foreground overflow-hidden shrink-0";
           avatarDiv.innerText = name.slice(0,2).toUpperCase();
-
-          // Lazy-load avatar only if user has one (non-blocking)
-          if (profileData.profile.has_avatar) {
+          if (initData.profile.has_avatar) {
             fetch("/api/user/avatar")
               .then(r => r.ok ? r.json() : null)
               .then(data => {
@@ -334,22 +339,37 @@
                 } else {
                   avatarDiv.innerHTML = `<span class="text-2xl">${av}</span>`;
                 }
-              })
-              .catch(() => {}); // silently fail — initials already showing
+              }).catch(() => {});
           }
 
           const skillsContainer = document.getElementById("profile-skills-tags");
-          const displaySkills = profileData.profile.skills || [];
-          if (displaySkills.length > 0) {
-            skillsContainer.innerHTML = displaySkills.slice(0, 8).map(s => `
-              <span class="px-2 py-0.5 bg-background/10 rounded-full font-mono text-[10px] uppercase">${s}</span>
-            `).join("");
+          const displaySkills = initData.profile.skills || [];
+          skillsContainer.innerHTML = displaySkills.length > 0
+            ? displaySkills.slice(0, 8).map(s => `<span class="px-2 py-0.5 bg-background/10 rounded-full font-mono text-[10px] uppercase">${s}</span>`).join("")
+            : `<span class="text-[10px] opacity-50 font-mono">ADD SOME SKILLS</span>`;
+
+          // Use opportunities from init response directly — no extra fetch!
+          const swipedIds = new Set([...initData.saved, ...initData.interested, ...initData.passed]);
+          feedOpps = (initData.opportunities || []).filter(item => !swipedIds.has(item.id));
+          currentPage = 1;
+          swipeIndex = 0;
+          swipeHistory = [];
+
+          document.getElementById("stats-banner").innerText =
+            `${feedOpps.length} opps · ${initData.saved.length} saved · ${initData.interested.length} ♥`;
+
+          renderSwipeStack();
+          renderFeedList();
+
+          const loadMoreBtn = document.getElementById("load-more-btn");
+          if ((initData.opportunities || []).length === 20) {
+            loadMoreBtn.classList.remove("hidden");
           } else {
-            skillsContainer.innerHTML = `<span class="text-[10px] opacity-50 font-mono">ADD SOME SKILLS</span>`;
+            loadMoreBtn.classList.add("hidden");
           }
 
-          // Fetch feed and watchlist in parallel
-          await Promise.all([loadFeedOpportunities(true), loadWatchlistWidget()]);
+          // Render watchlist from init response (no extra fetch)
+          renderWatchlistFromData(initData.watchlist || []);
 
         } catch (err) {
           console.error("Failed to initialize feed:", err);
@@ -966,6 +986,23 @@
       });
 
       // Load Watchlist widget
+      // Render watchlist from already-fetched data (used by initializeFeed)
+      function renderWatchlistFromData(items) {
+        const watchlistList = document.getElementById("watchlist-list");
+        if (!watchlistList) return;
+        if (!items || items.length === 0) {
+          watchlistList.innerHTML = `<li class="font-mono text-[9px] uppercase opacity-50">No saved items.</li>`;
+          return;
+        }
+        const sorted = [...items].sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
+        watchlistList.innerHTML = sorted.map(item => `
+          <li class="border-l-2 border-primary pl-3">
+            <div class="font-mono text-[9px] uppercase opacity-60">${formatDeadline(item.deadline)}</div>
+            <div class="text-xs font-semibold leading-tight truncate mt-0.5">${item.title}</div>
+          </li>
+        `).join("");
+      }
+
       async function loadWatchlistWidget() {
         const watchlistList = document.getElementById("watchlist-list");
         watchlistList.innerHTML = "";

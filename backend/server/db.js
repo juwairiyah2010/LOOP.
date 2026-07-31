@@ -27,12 +27,17 @@ const uri = sanitizeMongoUri(rawUri);
 // Support both DATABASE_NAME and DATABASE env var names
 const dbName = process.env.DATABASE_NAME || process.env.DATABASE || "leap_lounge";
 
-// Longer timeouts for Vercel serverless cold starts
+// Serverless-optimized MongoDB connection options
 const options = {
-  maxIdleTimeMS: 30000,
+  maxPoolSize: 5,           // cap connections on serverless
+  minPoolSize: 1,           // keep 1 alive to avoid reconnect on warm calls
+  maxIdleTimeMS: 45000,     // keep idle connections 45s (Vercel max lifetime ~60s)
   serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 20000,
   connectTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true,
+  compressors: ["zlib"],    // compress wire traffic
 };
 
 let client;
