@@ -24,13 +24,15 @@ function sanitizeMongoUri(uri) {
 
 const rawUri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const uri = sanitizeMongoUri(rawUri);
-const dbName = process.env.DATABASE_NAME || "leap_lounge";
+// Support both DATABASE_NAME and DATABASE env var names
+const dbName = process.env.DATABASE_NAME || process.env.DATABASE || "leap_lounge";
 
+// Longer timeouts for Vercel serverless cold starts
 const options = {
-  maxIdleTimeMS: 10000,
-  serverSelectionTimeoutMS: 2000, // Quick timeout to fall back quickly if offline
-  socketTimeoutMS: 10000,
-  connectTimeoutMS: 2000,
+  maxIdleTimeMS: 30000,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 20000,
+  connectTimeoutMS: 10000,
 };
 
 let client;
@@ -50,12 +52,12 @@ function loadMockDb() {
   try {
     if (fs.existsSync(mockDbFilePath)) {
       mockDbData = JSON.parse(fs.readFileSync(mockDbFilePath, "utf8"));
-      // Ensure arrays exist
       mockDbData.opportunities = mockDbData.opportunities || [];
       mockDbData.users = mockDbData.users || [];
       mockDbData.master_skills = mockDbData.master_skills || [];
       mockDbData.master_interests = mockDbData.master_interests || [];
     } else {
+      // In-memory only (no file write — safe for read-only filesystems like Vercel)
       mockDbData.opportunities = mockOpportunities;
       mockDbData.master_skills = [
         { name: "React" }, { name: "Node.js" }, { name: "TypeScript" }, { name: "Python" }, { name: "UI/UX" }
@@ -63,14 +65,16 @@ function loadMockDb() {
       mockDbData.master_interests = [
         { name: "STEM" }, { name: "Business" }, { name: "AI" }, { name: "Sustainability" }, { name: "Leadership" }
       ];
-      saveMockDb();
     }
   } catch (err) {
     console.error("Failed to load mock DB:", err);
+    // Fallback to in-memory defaults
+    mockDbData.opportunities = mockOpportunities;
   }
 }
 
 function saveMockDb() {
+  // Skip silently on read-only filesystems (Vercel, etc.)
   try {
     const dir = path.dirname(mockDbFilePath);
     if (!fs.existsSync(dir)) {
@@ -78,7 +82,7 @@ function saveMockDb() {
     }
     fs.writeFileSync(mockDbFilePath, JSON.stringify(mockDbData, null, 2), "utf8");
   } catch (err) {
-    console.error("Failed to save mock DB:", err);
+    // Silently ignore — in production, MongoDB handles persistence
   }
 }
 
@@ -327,37 +331,40 @@ class MockCollection {
   }
 }
 
-if (process.env.NODE_ENV === "development") {
-  // Clear the global cached promise if it exists to force a fresh connection check on reload
+// Serverless-safe MongoDB connection with global caching
+// Vercel reuses warm function instances — reuse the same MongoClient
+if (process.env.NODE_ENV !== "production") {
+  // Development: force fresh check on every hot-reload
   delete global._mongoClientPromise;
-  
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect().then((c) => {
-      console.log("Connected to MongoDB (Dev)");
-      setupIndexes(c.db(dbName)).catch(console.error);
-      return c;
-    }).catch(err => {
-      console.warn("MongoDB Dev connection failed. Falling back to local Mock DB:", err.message);
-      isMockDb = true;
-      loadMockDb();
-      delete global._mongoClientPromise; // Reset so next hot-reload tries again
-      return null;
-    });
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
+
   client = new MongoClient(uri, options);
-  clientPromise = client.connect().then((c) => {
-    console.log("Connected to MongoDB (Prod)");
+  global._mongoClientPromise = client.connect().then((c) => {
+    console.log("Connected to MongoDB (Dev)");
     setupIndexes(c.db(dbName)).catch(console.error);
     return c;
   }).catch(err => {
-    console.warn("MongoDB Prod connection failed. Falling back to local Mock DB:", err.message);
+    console.warn("MongoDB Dev connection failed. Falling back to local Mock DB:", err.message);
     isMockDb = true;
     loadMockDb();
     return null;
   });
+  clientPromise = global._mongoClientPromise;
+} else {
+  // Production (Vercel): reuse connection across warm invocations
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect().then((c) => {
+      console.log("Connected to MongoDB (Prod)");
+      setupIndexes(c.db(dbName)).catch(console.error);
+      return c;
+    }).catch(err => {
+      console.error("MongoDB Prod connection FAILED — check MONGODB_URI and Atlas Network Access (allow 0.0.0.0/0):", err.message);
+      isMockDb = true;
+      loadMockDb();
+      return null;
+    });
+  }
+  clientPromise = global._mongoClientPromise;
 }
 
 // Pre-init mock DB if the promise resolves to null
