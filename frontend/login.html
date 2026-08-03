@@ -65,35 +65,85 @@
   <!-- Main Container -->
   <main class="min-h-[80vh] flex flex-col items-center justify-center px-6">
     <div class="w-full max-w-md animate-entry">
-      <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-8">
-        Welcome<br>Back.
-      </h1>
-      
-      <div id="error-box" class="hidden mb-4 p-4 border-2 border-destructive bg-destructive/10 text-destructive font-mono text-xs uppercase rounded-xl"></div>
-      
-      <form id="login-form" class="flex flex-col gap-6">
-        <input 
-          type="text" 
-          id="username" 
-          required 
-          placeholder="ENTER USERNAME" 
-          class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
-        />
-        <input 
-          type="password" 
-          id="password" 
-          required 
-          placeholder="ENTER PASSWORD" 
-          class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
-        />
-        <button 
-          type="submit" 
-          id="submit-btn"
-          class="mt-4 inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
-        >
-          Log In <i data-lucide="arrow-right" class="size-4"></i>
+
+      <!-- ===== LOGIN VIEW ===== -->
+      <div id="view-login">
+        <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-8">
+          Welcome<br>Back.
+        </h1>
+        <div id="error-box" class="hidden mb-4 p-4 border-2 border-destructive bg-destructive/10 text-destructive font-mono text-xs uppercase rounded-xl"></div>
+        <form id="login-form" class="flex flex-col gap-6">
+          <input type="text" id="username" required placeholder="ENTER USERNAME"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <input type="password" id="password" required placeholder="ENTER PASSWORD"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <button type="submit" id="submit-btn"
+            class="mt-4 inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+            Log In <i data-lucide="arrow-right" class="size-4"></i>
+          </button>
+        </form>
+        <div class="mt-6 text-center">
+          <button id="forgot-btn" class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+            Forgot password?
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== STEP 1: VERIFY IDENTITY ===== -->
+      <div id="view-verify" class="hidden">
+        <button id="back-to-login" class="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
+          <i data-lucide="arrow-left" class="size-3.5"></i> Back to login
         </button>
-      </form>
+        <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-3">Reset<br>Password.</h1>
+        <p class="font-mono text-[11px] uppercase text-muted-foreground tracking-widest mb-8">Enter your username and the email you registered with</p>
+        <div id="verify-error" class="hidden mb-4 p-4 border-2 border-destructive bg-destructive/10 text-destructive font-mono text-xs uppercase rounded-xl"></div>
+        <form id="verify-form" class="flex flex-col gap-6">
+          <input type="text" id="reset-username" required placeholder="YOUR USERNAME"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <input type="email" id="reset-email" required placeholder="YOUR EMAIL"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <button type="submit" id="verify-btn"
+            class="mt-4 inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+            Verify Identity <i data-lucide="shield-check" class="size-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- ===== STEP 2: ENTER CODE + NEW PASSWORD ===== -->
+      <div id="view-reset" class="hidden">
+        <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-3">New<br>Password.</h1>
+        <div id="code-reveal" class="mb-6 p-4 border-2 border-primary bg-primary/10 rounded-xl">
+          <p class="font-mono text-[10px] uppercase text-muted-foreground tracking-widest mb-1">Your reset code</p>
+          <p id="code-display" class="font-display text-4xl tracking-widest text-primary"></p>
+          <p class="font-mono text-[9px] uppercase text-muted-foreground mt-1">Expires in 10 minutes</p>
+        </div>
+        <div id="reset-error" class="hidden mb-4 p-4 border-2 border-destructive bg-destructive/10 text-destructive font-mono text-xs uppercase rounded-xl"></div>
+        <form id="reset-form" class="flex flex-col gap-6">
+          <input type="text" id="reset-code" required placeholder="ENTER CODE" maxlength="6"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20 tracking-[0.5em]"/>
+          <input type="password" id="new-password" required placeholder="NEW PASSWORD" minlength="6"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <input type="password" id="confirm-password" required placeholder="CONFIRM PASSWORD" minlength="6"
+            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <button type="submit" id="reset-btn"
+            class="mt-4 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:opacity-90 transition-opacity">
+            Set New Password <i data-lucide="check" class="size-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- ===== STEP 3: SUCCESS ===== -->
+      <div id="view-success" class="hidden text-center">
+        <div class="mb-6 inline-flex items-center justify-center size-20 rounded-full bg-primary/10 border-2 border-primary">
+          <i data-lucide="check" class="size-10 text-primary"></i>
+        </div>
+        <h1 class="font-display text-5xl uppercase tracking-tight leading-[0.9] mb-4">Done!</h1>
+        <p class="font-mono text-[11px] uppercase text-muted-foreground tracking-widest mb-8">Your password has been updated successfully</p>
+        <a href="/login" class="inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+          Back to Login <i data-lucide="arrow-right" class="size-4"></i>
+        </a>
+      </div>
+
     </div>
   </main>
 
@@ -112,47 +162,116 @@
 
   <script src="/common.js"></script>
   <script>
+    function showView(id) {
+      ["view-login","view-verify","view-reset","view-success"].forEach(v => {
+        document.getElementById(v).classList.toggle("hidden", v !== id);
+      });
+      if (window.lucide) window.lucide.createIcons();
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
-      // Check auth state
       const user = await getAuthUser();
-      if (user) {
-        window.location.href = "/";
-        return;
-      }
-
+      if (user) { window.location.href = "/"; return; }
       initMarqueeTicker();
+      if (window.lucide) window.lucide.createIcons();
 
-      const form = document.getElementById("login-form");
-      const errorBox = document.getElementById("error-box");
+      // ---- Login form ----
+      const loginForm = document.getElementById("login-form");
+      const errorBox  = document.getElementById("error-box");
       const submitBtn = document.getElementById("submit-btn");
 
-      form.addEventListener("submit", async (e) => {
+      loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         errorBox.classList.add("hidden");
         submitBtn.disabled = true;
         submitBtn.innerHTML = "Logging in...";
-
-        const name = document.getElementById("username").value.trim();
+        const name     = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value;
-
         try {
-          const res = await fetch("/api/auth/authenticate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const res  = await fetch("/api/auth/authenticate", {
+            method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, password })
           });
-
           const data = await res.json();
-          if (res.ok && data.success) {
-            window.location.href = "/";
-          } else {
-            throw new Error(data.error || "Failed to log in");
-          }
+          if (res.ok && data.success) { window.location.href = "/"; }
+          else { throw new Error(data.error || "Failed to log in"); }
         } catch (err) {
           errorBox.innerText = err.message;
           errorBox.classList.remove("hidden");
           submitBtn.disabled = false;
           submitBtn.innerHTML = `Log In <i data-lucide="arrow-right" class="size-4"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      document.getElementById("forgot-btn").addEventListener("click", () => showView("view-verify"));
+      document.getElementById("back-to-login").addEventListener("click", () => showView("view-login"));
+
+      // ---- Verify identity form ----
+      let verifiedUsername = "";
+      const verifyForm  = document.getElementById("verify-form");
+      const verifyError = document.getElementById("verify-error");
+      const verifyBtn   = document.getElementById("verify-btn");
+
+      verifyForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        verifyError.classList.add("hidden");
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = "Verifying...";
+        const username = document.getElementById("reset-username").value.trim();
+        const email    = document.getElementById("reset-email").value.trim();
+        try {
+          const res  = await fetch("/api/auth/reset/verify", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Verification failed");
+          verifiedUsername = username;
+          document.getElementById("code-display").innerText = data.code;
+          showView("view-reset");
+        } catch (err) {
+          verifyError.innerText = err.message;
+          verifyError.classList.remove("hidden");
+        } finally {
+          verifyBtn.disabled = false;
+          verifyBtn.innerHTML = `Verify Identity <i data-lucide="shield-check" class="size-4"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      // ---- Reset password form ----
+      const resetForm  = document.getElementById("reset-form");
+      const resetError = document.getElementById("reset-error");
+      const resetBtn   = document.getElementById("reset-btn");
+
+      resetForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        resetError.classList.add("hidden");
+        const code            = document.getElementById("reset-code").value.trim();
+        const newPassword     = document.getElementById("new-password").value;
+        const confirmPassword = document.getElementById("confirm-password").value;
+        if (newPassword !== confirmPassword) {
+          resetError.innerText = "Passwords do not match";
+          resetError.classList.remove("hidden");
+          return;
+        }
+        resetBtn.disabled = true;
+        resetBtn.innerHTML = "Saving...";
+        try {
+          const res  = await fetch("/api/auth/reset/confirm", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: verifiedUsername, code, newPassword })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Reset failed");
+          showView("view-success");
+        } catch (err) {
+          resetError.innerText = err.message;
+          resetError.classList.remove("hidden");
+        } finally {
+          resetBtn.disabled = false;
+          resetBtn.innerHTML = `Set New Password <i data-lucide="check" class="size-4"></i>`;
           if (window.lucide) window.lucide.createIcons();
         }
       });

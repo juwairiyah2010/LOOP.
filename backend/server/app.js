@@ -177,6 +177,61 @@ app.post("/api/auth/logout", (req, res) => {
   return res.json({ success: true });
 });
 
+// -- PASSWORD RESET --
+// Step 1: Verify identity (username + email on file)
+app.post("/api/auth/reset/verify", async (req, res) => {
+  const { username, email } = req.body;
+  if (!username || !email) {
+    return res.status(400).json({ error: "Username and email are required" });
+  }
+  try {
+    const users = await getUsersCollection();
+    const user = await users.findOne({ name: username });
+    if (!user || (user.profile?.email || "").toLowerCase() !== email.toLowerCase()) {
+      return res.status(404).json({ error: "No account found with that username and email combination" });
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await users.updateOne(
+      { _id: user._id },
+      { $set: { resetCode: code, resetCodeExpires: expiresAt } }
+    );
+    return res.json({ success: true, code, message: "Identity verified" });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Step 2: Confirm code + set new password
+app.post("/api/auth/reset/confirm", async (req, res) => {
+  const { username, code, newPassword } = req.body;
+  if (!username || !code || !newPassword) {
+    return res.status(400).json({ error: "Username, code, and new password are required" });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+  try {
+    const users = await getUsersCollection();
+    const user = await users.findOne({ name: username });
+    if (!user || user.resetCode !== code) {
+      return res.status(400).json({ error: "Invalid reset code" });
+    }
+    if (!user.resetCodeExpires || new Date() > new Date(user.resetCodeExpires)) {
+      return res.status(400).json({ error: "Reset code has expired. Please start over." });
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await users.updateOne(
+      { _id: user._id },
+      { $set: { passwordHash }, $unset: { resetCode: "", resetCodeExpires: "" } }
+    );
+    return res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ----------------------------------------------------------------------
 // USER DATA ENDPOINTS (Require Authentication)
 // ----------------------------------------------------------------------
@@ -239,7 +294,7 @@ app.get("/api/user/avatar", requireAuth, async (req, res) => {
   }
 });
 
-// ── SINGLE COMBINED INIT ENDPOINT ─────────�// each paying the cold-start penalty, there is only ONE.
+// ── SINGLE COMBINED INIT ENDPOINT ─────────�// each paying the cold-start penalty, there is only ONE.
 app.get("/api/feed/init", requireAuth, async (req, res) => {
   try {
     const [usersCol, oppsCol] = await Promise.all([
