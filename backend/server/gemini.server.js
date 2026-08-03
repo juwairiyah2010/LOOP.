@@ -40,13 +40,46 @@ export function checkRateLimit(identifier) {
 // LOCAL FALLBACK PARSER AND DATA DICTIONARIES
 // ======================================================================
 
-const PROGRAMMING_LANGUAGES = ["javascript", "typescript", "python", "java", "c++", "go", "rust", "swift", "kotlin", "sql"];
-const FRAMEWORKS = ["react", "vue", "angular", "next.js", "node.js", "express", "django", "flask", "fastapi", "tailwind", "bootstrap"];
-const TOOLS = ["figma", "sketch", "photoshop", "illustrator", "docker", "kubernetes", "git", "aws", "gcp", "azure"];
-const TECHNOLOGIES = ["mongodb", "firebase", "supabase", "graphql", "rest", "machine learning", "deep learning", "ai", "nlp", "computer vision"];
-const DOMAINS = ["ai", "web development", "cybersecurity", "finance", "design", "research", "product management", "startup"];
-const SKILLS = ["agile", "testing", "ci/cd", "linux", "marketing", "seo", "copywriting", "strategy", "accounting", "sales", "leadership", "public speaking"];
-const INTERESTS = ["stem", "business", "ai", "sustainability", "leadership", "open source", "photography", "writing", "music"];
+const PROGRAMMING_LANGUAGES = [
+  "javascript", "typescript", "python", "java", "c++", "c#", "go", "rust", "swift",
+  "kotlin", "sql", "r", "matlab", "scala", "dart", "php", "ruby", "bash", "shell"
+];
+const FRAMEWORKS = [
+  "react", "vue", "angular", "next.js", "nuxt", "svelte", "node.js", "express",
+  "django", "flask", "fastapi", "spring", "laravel", "rails", "tailwind", "bootstrap",
+  "flutter", "react native", "tensorflow", "pytorch", "keras", "scikit-learn",
+  "pandas", "numpy", "langchain", "hugging face", "opencv"
+];
+const TOOLS = [
+  "figma", "sketch", "photoshop", "illustrator", "xd", "canva",
+  "docker", "kubernetes", "git", "github", "gitlab", "jenkins", "terraform",
+  "aws", "gcp", "azure", "heroku", "vercel", "netlify", "postman", "jira",
+  "linux", "bash", "nginx", "redis", "elasticsearch"
+];
+const TECHNOLOGIES = [
+  "mongodb", "postgresql", "mysql", "sqlite", "firebase", "supabase", "dynamodb",
+  "graphql", "rest", "grpc", "websocket", "kafka", "rabbitmq",
+  "machine learning", "deep learning", "ai", "nlp", "computer vision",
+  "data science", "big data", "blockchain", "web3", "iot", "ar", "vr",
+  "devops", "cloud computing", "microservices"
+];
+const DOMAINS = [
+  "ai", "web development", "mobile development", "cybersecurity", "data science",
+  "finance", "fintech", "design", "ui/ux", "research", "product management",
+  "startup", "healthcare", "edtech", "sustainability", "robotics", "gaming"
+];
+const SKILLS = [
+  "agile", "scrum", "testing", "ci/cd", "linux", "marketing", "seo", "copywriting",
+  "strategy", "accounting", "sales", "leadership", "public speaking", "communication",
+  "teamwork", "problem solving", "critical thinking", "data analysis", "project management",
+  "business development", "content creation", "research", "entrepreneurship"
+];
+const INTERESTS = [
+  "stem", "technology", "business", "ai", "sustainability", "leadership",
+  "open source", "photography", "writing", "music", "art", "sports",
+  "entrepreneurship", "social impact", "education", "healthcare", "finance",
+  "gaming", "travel", "environment", "data science", "machine learning", "web development"
+];
 
 function extractTextFromPdfBase64(base64Pdf) {
   try {
@@ -350,7 +383,7 @@ export async function analyzeOpportunities(userProfile, opportunityIds) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -404,7 +437,7 @@ export async function analyzeResumePdf(base64Pdf) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: [
         {
           inlineData: {
@@ -473,7 +506,7 @@ export async function generatePersonalizedOpportunities(userProfile) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
