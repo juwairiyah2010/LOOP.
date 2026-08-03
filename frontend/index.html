@@ -362,7 +362,7 @@
           renderFeedList();
 
           const loadMoreBtn = document.getElementById("load-more-btn");
-          if ((initData.opportunities || []).length === 20) {
+          if ((initData.opportunities || []).length === 50) {
             loadMoreBtn.classList.remove("hidden");
           } else {
             loadMoreBtn.classList.add("hidden");
@@ -567,7 +567,10 @@
         }
 
         // Render Current Card on top
-        const currentScore = getMatchScore(profileData.profile, current.tags || []);
+        // Use server-computed matchScore (0-100) — server already sorted descending by it
+        const currentScore = (current.matchScore !== undefined)
+          ? current.matchScore
+          : getMatchScore(profileData.profile, current.tags || []);
         const currentCategoryColor = categoryColors[current.category] || "bg-foreground text-background";
         const currentTagsHtml = (current.tags || []).slice(0, 4).map(t => `
           <span class="px-2 py-0.5 border border-foreground/15 rounded-full font-mono text-[10px] uppercase">${t}</span>
@@ -831,7 +834,10 @@
         }
 
         feedList.innerHTML = feedOpps.map((opp, index) => {
-          const score = getMatchScore(profileData.profile, opp.tags || []);
+          // Use server-computed matchScore when available, fall back to client
+          const score = (opp.matchScore !== undefined)
+            ? opp.matchScore
+            : getMatchScore(profileData.profile, opp.tags || []);
           const isSaved = profileData.saved.includes(opp.id);
           const colorClass = categoryColors[opp.category] || "bg-foreground text-background";
 

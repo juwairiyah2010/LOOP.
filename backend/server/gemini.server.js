@@ -3,9 +3,10 @@ dotenv.config({ override: true });
 import { GoogleGenAI } from "@google/genai";
 import { getOpportunitiesCollection } from "./db.js";
 
-// Ensure the API key is available
+
 const apiKey = process.env.GEMINI_API_KEY;
-const isPlaceholderKey = !apiKey || apiKey === "your_gemini_api_key_here";
+// Treat key as missing if not set or looks like a short placeholder (real keys are 39+ chars)
+const isPlaceholderKey = !apiKey || apiKey.length < 30;
 
 if (isPlaceholderKey) {
   console.warn("GEMINI_API_KEY environment variable is missing or placeholder. Running with local Mock Fallback system.");

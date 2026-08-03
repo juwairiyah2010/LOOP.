@@ -239,10 +239,7 @@ app.get("/api/user/avatar", requireAuth, async (req, res) => {
   }
 });
 
-// ── SINGLE COMBINED INIT ENDPOINT ────────────────────────────────────────────
-// Returns everything needed for the feed page in ONE request / ONE DB connection.
-// This is the key fix for Vercel cold start lag — instead of 4 sequential fetches
-// each paying the cold-start penalty, there is only ONE.
+// ── SINGLE COMBINED INIT ENDPOINT ─────────�// each paying the cold-start penalty, there is only ONE.
 app.get("/api/feed/init", requireAuth, async (req, res) => {
   try {
     const [usersCol, oppsCol] = await Promise.all([
@@ -250,27 +247,105 @@ app.get("/api/feed/init", requireAuth, async (req, res) => {
       getOpportunitiesCollection(),
     ]);
 
-    // Fetch user in parallel with first page of opportunities
-    const dbUserPromise = usersCol.findOne({ _id: toObjectId(req.user.userId) });
-
-    // First page of opportunities (sorted by deadline)
-    const now = new Date().toISOString();
-    const oppsPromise = oppsCol.aggregate([
-      { $match: { deadline: { $gte: now } } },
-      { $sort: { deadline: 1 } },
-      { $limit: 20 },
-      { $project: {
-        id: 1, _id: 1, title: 1, organization: 1, category: 1,
-        location: 1, deadline: 1, tags: 1, prize_amount: 1,
-        work_mode: 1, verified: 1, featured: 1, description: 1,
-        apply_url: 1, participants: 1, application_start_date: 1, posted_at: 1
-      }}
-    ]).toArray();
-
-    const [dbUser, opps] = await Promise.all([dbUserPromise, oppsPromise]);
+    // Fetch user first so we can use their profile for match scoring
+    const dbUser = await usersCol.findOne({ _id: toObjectId(req.user.userId) });
     if (!dbUser) return res.status(404).json({ error: "User not found" });
 
     const p = dbUser.profile || {};
+
+    // Build profile tokens (same logic as frontend getMatchScore)
+    const profileTokens = [
+      ...(p.skills || []),
+      ...(p.interests || []),
+      ...(p.categories || []),
+      p.field
+    ].filter(Boolean).map(t => t.toLowerCase());
+
+    const now = new Date().toISOString();
+
+    // Build aggregate pipeline with match scoring + descending sort
+    const pipeline = [
+      { $match: { deadline: { $gte: now } } }
+    ];
+
+    if (profileTokens.length > 0) {
+      // Compute matchScore: fraction of opp tags that match profile tokens × 100
+      pipeline.push({
+        $addFields: {
+          matchScore: {
+            $cond: {
+              if: { $gt: [{ $size: { $ifNull: ["$tags", []] } }, 0] },
+              then: {
+                $multiply: [
+                  {
+                    $divide: [
+                      {
+                        $size: {
+                          $setIntersection: [
+                            { $map: { input: { $ifNull: ["$tags", []] }, as: "t", in: { $toLower: "$$t" } } },
+                            profileTokens
+                          ]
+                        }
+                      },
+                      { $size: { $ifNull: ["$tags", []] } }
+                    ]
+                  },
+                  100
+                ]
+              },
+              else: 0
+            }
+          }
+        }
+      });
+      // Highest match first, then nearest deadline
+      pipeline.push({ $sort: { matchScore: -1, deadline: 1 } });
+    } else {
+      // No profile set — sort by deadline
+      pipeline.push({ $sort: { deadline: 1 } });
+    }
+
+    pipeline.push({ $limit: 50 }); // load more so swipe stack stays full
+    pipeline.push({
+      $project: {
+        id: 1, _id: 1, title: 1, organization: 1, category: 1,
+        location: 1, deadline: 1, tags: 1, prize_amount: 1,
+        work_mode: 1, verified: 1, featured: 1, description: 1,
+        apply_url: 1, participants: 1, application_start_date: 1,
+        posted_at: 1, matchScore: 1
+      }
+    });
+
+    // Run opportunities query in parallel with watchlist
+    const oppsPromise = oppsCol.aggregate(pipeline).toArray();
+
+    // Watchlist: upcoming deadlines from saved items
+    const savedIds = dbUser.saved || [];
+    const watchlistPromise = savedIds.length > 0
+      ? oppsCol.find(
+          { $or: [
+              { id: { $in: savedIds } },
+              { _id: { $in: savedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id)).map(id => toObjectId(id)) } }
+            ],
+            deadline: { $gte: now }
+          },
+          { projection: { title: 1, organization: 1, deadline: 1, id: 1, _id: 1 } }
+        ).sort({ deadline: 1 }).limit(5).toArray()
+      : Promise.resolve([]);
+
+    const [opps, watchlistRaw] = await Promise.all([oppsPromise, watchlistPromise]);
+
+    const results = opps.map(doc => ({
+      ...doc,
+      _id: String(doc._id),
+      id: doc.id ? String(doc.id) : String(doc._id),
+      matchScore: doc.matchScore !== undefined ? Math.round(doc.matchScore) : 0,
+    }));
+
+    const watchlist = watchlistRaw.map(d => ({
+      ...d, _id: String(d._id), id: d.id ? String(d.id) : String(d._id)
+    }));
+
     const profile = {
       name: p.name || "",
       field: p.field || "",
@@ -282,28 +357,6 @@ app.get("/api/feed/init", requireAuth, async (req, res) => {
       goal: p.goal || "",
       has_avatar: !!(p.avatar && p.avatar.length > 10),
     };
-
-    const results = opps.map(doc => ({
-      ...doc,
-      _id: String(doc._id),
-      id: doc.id ? String(doc.id) : String(doc._id),
-    }));
-
-    // Watchlist: upcoming deadlines from saved items
-    const savedIds = dbUser.saved || [];
-    let watchlist = [];
-    if (savedIds.length > 0) {
-      watchlist = await oppsCol.find(
-        { $or: [
-            { id: { $in: savedIds } },
-            { _id: { $in: savedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id)).map(id => toObjectId(id)) } }
-          ],
-          deadline: { $gte: now }
-        },
-        { projection: { title: 1, organization: 1, deadline: 1, id: 1, _id: 1 } }
-      ).sort({ deadline: 1 }).limit(5).toArray();
-      watchlist = watchlist.map(d => ({ ...d, _id: String(d._id), id: d.id ? String(d.id) : String(d._id) }));
-    }
 
     res.setHeader("Cache-Control", "private, max-age=15");
     return res.json({
@@ -320,7 +373,6 @@ app.get("/api/feed/init", requireAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
-
 // Ping/keepwarm — lets frontend ping on load to pre-warm the function
 app.get("/api/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
