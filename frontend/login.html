@@ -75,8 +75,14 @@
         <form id="login-form" class="flex flex-col gap-6">
           <input type="text" id="username" required placeholder="ENTER USERNAME"
             class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
-          <input type="password" id="password" required placeholder="ENTER PASSWORD"
-            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <div class="relative">
+            <input type="password" id="password" required placeholder="ENTER PASSWORD"
+              class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 pr-10 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+            <button type="button" onclick="togglePwd('password', this)" tabindex="-1" aria-label="Toggle password visibility"
+              class="absolute right-1 bottom-3 text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+              <i data-lucide="eye" class="size-5"></i>
+            </button>
+          </div>
           <button type="submit" id="submit-btn"
             class="mt-4 inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
             Log In <i data-lucide="arrow-right" class="size-4"></i>
@@ -121,10 +127,22 @@
         <form id="reset-form" class="flex flex-col gap-6">
           <input type="text" id="reset-code" required placeholder="ENTER CODE" maxlength="6"
             class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20 tracking-[0.5em]"/>
-          <input type="password" id="new-password" required placeholder="NEW PASSWORD" minlength="6"
-            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
-          <input type="password" id="confirm-password" required placeholder="CONFIRM PASSWORD" minlength="6"
-            class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+          <div class="relative">
+            <input type="password" id="new-password" required placeholder="NEW PASSWORD" minlength="6"
+              class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 pr-10 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+            <button type="button" onclick="togglePwd('new-password', this)" tabindex="-1" aria-label="Toggle password visibility"
+              class="absolute right-1 bottom-3 text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+              <i data-lucide="eye" class="size-5"></i>
+            </button>
+          </div>
+          <div class="relative">
+            <input type="password" id="confirm-password" required placeholder="CONFIRM PASSWORD" minlength="6"
+              class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 pr-10 font-display text-2xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"/>
+            <button type="button" onclick="togglePwd('confirm-password', this)" tabindex="-1" aria-label="Toggle password visibility"
+              class="absolute right-1 bottom-3 text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+              <i data-lucide="eye" class="size-5"></i>
+            </button>
+          </div>
           <button type="submit" id="reset-btn"
             class="mt-4 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-4 rounded-xl font-mono text-xs font-bold uppercase hover:opacity-90 transition-opacity">
             Set New Password <i data-lucide="check" class="size-4"></i>
@@ -276,6 +294,16 @@
         }
       });
     });
+
+    function togglePwd(id, btn) {
+      const inp = document.getElementById(id);
+      const isHidden = inp.type === "password";
+      inp.type = isHidden ? "text" : "password";
+      btn.innerHTML = isHidden
+        ? '<i data-lucide="eye-off" class="size-5"></i>'
+        : '<i data-lucide="eye" class="size-5"></i>';
+      if (window.lucide) window.lucide.createIcons();
+    }
   </script>
 </body>
 </html>

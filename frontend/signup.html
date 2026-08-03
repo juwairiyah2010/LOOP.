@@ -79,13 +79,19 @@
           placeholder="CHOOSE A USERNAME" 
           class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
         />
-        <input 
+        <div class="relative">
+            <input 
           type="password" 
           id="password" 
           required 
           placeholder="CREATE PASSWORD" 
-          class="w-full bg-transparent border-b-4 border-foreground px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
+          class="w-full bg-transparent border-b-4 border-foreground pr-10 px-1 py-3 font-display text-3xl uppercase tracking-tight focus:outline-none focus:border-primary placeholder:text-foreground/20"
         />
+            <button type="button" onclick="togglePwd('password', this)" tabindex="-1" aria-label="Toggle password visibility"
+              class="absolute right-1 bottom-3 text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+              <i data-lucide="eye" class="size-5"></i>
+            </button>
+          </div>
         <button 
           type="submit" 
           id="submit-btn"
@@ -158,6 +164,16 @@
         }
       });
     });
+
+    function togglePwd(id, btn) {
+      const inp = document.getElementById(id);
+      const isHidden = inp.type === "password";
+      inp.type = isHidden ? "text" : "password";
+      btn.innerHTML = isHidden
+        ? '<i data-lucide="eye-off" class="size-5"></i>'
+        : '<i data-lucide="eye" class="size-5"></i>';
+      if (window.lucide) window.lucide.createIcons();
+    }
   </script>
 </body>
 </html>
